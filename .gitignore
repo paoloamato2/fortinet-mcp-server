@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+wheels/
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# uv
+.uv/
+# uv.lock is intentionally tracked (reproducible installs)
+
+# Secrets
+.env
+!.env.example
+
+# One-off migration / utility scripts
+transform_vdom.py
+fix_vdom.py
+
+# IDE / editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing & coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Type checking
+.mypy_cache/
+.pyright/
