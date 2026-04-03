@@ -1,0 +1,80 @@
+name: Bug Report
+description: Create a report to help us improve the fortinet-mcp-server
+title: "[BUG] "
+labels: [bug, unconfirmed]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report! 
+        **SECURITY NOTE:** If you have found a security vulnerability, please refer to the [SECURITY.md](https://github.com/paoloamato2/fortinet-mcp-server/blob/master/SECURITY.md) guidelines instead of opening a public issue.
+
+  - type: input
+    id: fortios_version
+    attributes:
+      label: FortiOS Version
+      description: Which version of FortiOS are you targeting? (e.g. 7.6.6)
+      placeholder: "7.6.6"
+    validations:
+      required: true
+  
+  - type: input
+    id: python_version
+    attributes:
+      label: Python Version
+      description: What version of Python are you running the server with?
+      placeholder: "3.11.x / 3.12.x"
+    validations:
+      required: true
+      
+  - type: input
+    id: mcp_client
+    attributes:
+      label: MCP Client
+      description: Are you using Claude Desktop, Cursor, or another MCP client? Include the version if possible.
+      placeholder: "Claude Desktop v0.x"
+    validations:
+      required: true
+
+  - type: textarea
+    id: bug_description
+    attributes:
+      label: Describe the bug
+      description: A clear and concise description of what the bug is.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction_steps
+    attributes:
+      label: Steps to reproduce the behavior
+      description: Please provide the exact steps to reproduce, or the tool invocation that fails.
+      placeholder: |
+        1. Call tool 'firewall_policy_list' with args X, Y...
+        2. Wait for response...
+        3. See error...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected_behavior
+    attributes:
+      label: Expected behavior
+      description: A clear and concise description of what you expected to happen.
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs or tracebacks
+      description: Please copy and paste any relevant logs, terminal output, or stack traces here. **Make sure to redact API tokens and IPs.**
+      render: shell
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Terms
+      options:
+        - label: I have redacted any sensitive information (API tokens, private IPs) from the issue description.
+          required: true
