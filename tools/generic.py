@@ -63,7 +63,13 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
                 description="Comma-separated list of fields to return. Reduces response size.",
             ),
         ] = None,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """List all objects of a CMDB resource type.
 
@@ -99,7 +105,13 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
                 )
             ),
         ],
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Get a single CMDB configuration object by its primary key.
 
@@ -130,11 +142,17 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
                 description=(
                     "JSON string with the object properties to create. "
                     "Must comply with the FortiOS schema for this resource. "
-                    "Example: '{\"name\": \"my-addr\", \"type\": \"ipmask\", \"subnet\": \"10.0.0.0/24\"}'"
+                    'Example: \'{"name": "my-addr", "type": "ipmask", "subnet": "10.0.0.0/24"}\''
                 )
             ),
         ],
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Create a new CMDB configuration object (POST).
 
@@ -172,7 +190,13 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
                 )
             ),
         ],
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Update/replace a CMDB configuration object (PUT).
 
@@ -201,7 +225,13 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
                 )
             ),
         ],
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Delete a CMDB configuration object.
 
@@ -237,11 +267,17 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
                 default=None,
                 description=(
                     "Optional JSON string with additional query parameters. "
-                    "Example: '{\"tunnel_name\": \"my-vpn\"}'"
+                    'Example: \'{"tunnel_name": "my-vpn"}\''
                 ),
             ),
         ] = None,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Retrieve real-time operational data from any monitor endpoint.
 
@@ -280,11 +316,17 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
                 default=None,
                 description=(
                     "Optional JSON string with action parameters. "
-                    "Example: '{\"mkey\": \"tunnel-name\"}'"
+                    'Example: \'{"mkey": "tunnel-name"}\''
                 ),
             ),
         ] = None,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Trigger a monitor action (POST) on any monitor endpoint.
 
@@ -326,11 +368,17 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
                 default=None,
                 description=(
                     "Optional JSON string with query params like filters, rows, start. "
-                    "Example: '{\"rows\": 100, \"start\": 0, \"filter\": \"srcip==10.0.0.1\"}'"
+                    'Example: \'{"rows": 100, "start": 0, "filter": "srcip==10.0.0.1"}\''
                 ),
             ),
         ] = None,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Retrieve log entries from disk, memory, FortiAnalyzer, or FortiCloud.
 
@@ -381,7 +429,13 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
                 description="Optional JSON body for POST requests.",
             ),
         ] = None,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Call any FortiOS Service API endpoint.
 

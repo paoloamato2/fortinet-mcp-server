@@ -23,7 +23,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def router_static_list(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """List all IPv4 static routes."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -36,7 +42,13 @@ def register(mcp: FastMCP) -> None:
     async def router_static_get(
         ctx: Context,
         seq_num: Annotated[int, Field(description="Static route sequence number.")],
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Get a specific static route by sequence number."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -48,13 +60,32 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def router_static_create(
         ctx: Context,
-        dst: Annotated[str, Field(description="Destination network in CIDR or 'ip mask' format (e.g. '10.10.0.0/16' or '10.10.0.0 255.255.0.0').")],
+        dst: Annotated[
+            str,
+            Field(
+                description="Destination network in CIDR or 'ip mask' format (e.g. '10.10.0.0/16' or '10.10.0.0 255.255.0.0')."
+            ),
+        ],
         gateway: Annotated[str, Field(description="Next-hop gateway IP address.")],
-        device: Annotated[str, Field(description="Egress interface name (e.g. 'wan1').")],
-        distance: Annotated[int, Field(default=10, description="Administrative distance (1-255).")] = 10,
-        priority: Annotated[int, Field(default=0, description="Priority (lower = preferred).")] = 0,
-        comment: Annotated[str | None, Field(default=None, description="Comment.")] = None,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        device: Annotated[
+            str, Field(description="Egress interface name (e.g. 'wan1').")
+        ],
+        distance: Annotated[
+            int, Field(default=10, description="Administrative distance (1-255).")
+        ] = 10,
+        priority: Annotated[
+            int, Field(default=0, description="Priority (lower = preferred).")
+        ] = 0,
+        comment: Annotated[
+            str | None, Field(default=None, description="Comment.")
+        ] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Create a new static route."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -62,6 +93,7 @@ def register(mcp: FastMCP) -> None:
         if "/" in dst:
             ip, prefix = dst.split("/")
             import ipaddress
+
             net = ipaddress.IPv4Network(dst, strict=False)
             dst_normalized = f"{ip} {net.netmask}"
         else:
@@ -84,13 +116,31 @@ def register(mcp: FastMCP) -> None:
     async def router_static_update(
         ctx: Context,
         seq_num: Annotated[int, Field(description="Route sequence number to update.")],
-        gateway: Annotated[str | None, Field(default=None, description="New next-hop gateway.")] = None,
-        device: Annotated[str | None, Field(default=None, description="New egress interface.")] = None,
-        distance: Annotated[int | None, Field(default=None, description="New administrative distance.")] = None,
-        priority: Annotated[int | None, Field(default=None, description="New priority.")] = None,
-        status: Annotated[str | None, Field(default=None, description="Status: enable or disable.")] = None,
-        comment: Annotated[str | None, Field(default=None, description="New comment.")] = None,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        gateway: Annotated[
+            str | None, Field(default=None, description="New next-hop gateway.")
+        ] = None,
+        device: Annotated[
+            str | None, Field(default=None, description="New egress interface.")
+        ] = None,
+        distance: Annotated[
+            int | None, Field(default=None, description="New administrative distance.")
+        ] = None,
+        priority: Annotated[
+            int | None, Field(default=None, description="New priority.")
+        ] = None,
+        status: Annotated[
+            str | None, Field(default=None, description="Status: enable or disable.")
+        ] = None,
+        comment: Annotated[
+            str | None, Field(default=None, description="New comment.")
+        ] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Update an existing static route."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -118,7 +168,13 @@ def register(mcp: FastMCP) -> None:
     async def router_static_delete(
         ctx: Context,
         seq_num: Annotated[int, Field(description="Route sequence number to delete.")],
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Delete a static route."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -134,7 +190,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def router_static6_list(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """List all IPv6 static routes."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -150,7 +212,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def router_policy_list(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """List all policy-based routing rules."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -166,7 +234,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def router_ospf_get(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Get OSPF routing configuration (areas, networks, neighbors, redistribute)."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -178,7 +252,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def router_ospf6_get(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Get OSPFv3 (IPv6) routing configuration."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -194,7 +274,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def router_bgp_get(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Get BGP routing configuration (ASN, peers, networks, redistribute)."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -207,12 +293,20 @@ def register(mcp: FastMCP) -> None:
     async def router_bgp_update(
         ctx: Context,
         as_number: Annotated[
-            int | None, Field(default=None, description="Local BGP AS number (1-4294967295).")
+            int | None,
+            Field(default=None, description="Local BGP AS number (1-4294967295)."),
         ] = None,
         router_id: Annotated[
-            str | None, Field(default=None, description="BGP router ID (IP address format).")
+            str | None,
+            Field(default=None, description="BGP router ID (IP address format)."),
         ] = None,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Update BGP global configuration (AS number, router ID)."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -235,7 +329,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def router_rip_get(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Get RIPv1/v2 routing configuration."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -251,7 +351,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def router_prefix_list_list(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """List all IPv4 prefix lists (used in route filtering)."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -263,7 +369,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def router_route_map_list(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """List all route-maps (used for route filtering and attribute modification)."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -275,7 +387,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def router_community_list_list(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """List all BGP community lists."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -291,7 +409,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def router_access_list_list(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """List all router access lists (ACL for routing)."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -307,13 +431,19 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def router_sdwan_get(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Get the SD-WAN (virtual-WAN) configuration."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
         try:
             return await client.cmdb_get("system/virtual-wan-link", vdom=vdom)
-        except FortiOSError as exc:
+        except FortiOSError:
             # Fallback for newer firmware
             try:
                 return await client.cmdb_get("system/sdwan", vdom=vdom)
@@ -327,7 +457,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def monitor_router_ipv4(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Get the active IPv4 routing table (all routes in the FIB)."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -339,7 +475,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def monitor_router_ipv6(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Get the active IPv6 routing table."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -351,12 +493,25 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def monitor_router_lookup(
         ctx: Context,
-        destination: Annotated[str, Field(description="Destination IP address to look up in the routing table.")],
+        destination: Annotated[
+            str,
+            Field(
+                description="Destination IP address to look up in the routing table."
+            ),
+        ],
         interface: Annotated[
             str | None,
-            Field(default=None, description="Optional source interface for PBR lookup."),
+            Field(
+                default=None, description="Optional source interface for PBR lookup."
+            ),
         ] = None,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Perform a route lookup — find the best route for a destination IP."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -371,20 +526,36 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def monitor_router_lookup6(
         ctx: Context,
-        destination: Annotated[str, Field(description="IPv6 destination address to look up.")],
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        destination: Annotated[
+            str, Field(description="IPv6 destination address to look up.")
+        ],
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Perform an IPv6 route lookup."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
         try:
-            return await client.monitor_get("router/lookup-policy", {"destination": destination}, vdom=vdom)
+            return await client.monitor_get(
+                "router/lookup-policy", {"destination": destination}, vdom=vdom
+            )
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
     @mcp.tool()
     async def monitor_router_statistics(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Get routing protocol statistics (BGP, OSPF, RIP adjacencies/neighbors)."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -396,7 +567,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def monitor_sdwan_health_check(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Get SD-WAN performance SLA health check results."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -408,7 +585,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def monitor_sdwan_members(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Get SD-WAN member interface status and bandwidth usage."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]

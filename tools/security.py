@@ -26,7 +26,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def ips_sensor_list(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """List all IPS sensor profiles."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -39,7 +45,13 @@ def register(mcp: FastMCP) -> None:
     async def ips_sensor_get(
         ctx: Context,
         name: Annotated[str, Field(description="IPS sensor name.")],
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Get a specific IPS sensor profile."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -53,10 +65,22 @@ def register(mcp: FastMCP) -> None:
         ctx: Context,
         name: Annotated[str, Field(description="IPS sensor name.")],
         block_malicious_url: Annotated[
-            str, Field(default="disable", description="Block malicious URLs: enable or disable.")
+            str,
+            Field(
+                default="disable",
+                description="Block malicious URLs: enable or disable.",
+            ),
         ] = "disable",
-        comment: Annotated[str | None, Field(default=None, description="Comment.")] = None,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        comment: Annotated[
+            str | None, Field(default=None, description="Comment.")
+        ] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Create a new IPS sensor profile."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -75,7 +99,13 @@ def register(mcp: FastMCP) -> None:
     async def ips_sensor_delete(
         ctx: Context,
         name: Annotated[str, Field(description="IPS sensor name to delete.")],
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Delete an IPS sensor profile."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -87,7 +117,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def ips_custom_list(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """List all custom IPS signatures."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -103,7 +139,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def antivirus_profile_list(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """List all antivirus profiles."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -116,7 +158,13 @@ def register(mcp: FastMCP) -> None:
     async def antivirus_profile_get(
         ctx: Context,
         name: Annotated[str, Field(description="Antivirus profile name.")],
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Get a specific antivirus profile."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -129,11 +177,23 @@ def register(mcp: FastMCP) -> None:
     async def antivirus_profile_create(
         ctx: Context,
         name: Annotated[str, Field(description="Profile name.")],
-        comment: Annotated[str | None, Field(default=None, description="Comment.")] = None,
+        comment: Annotated[
+            str | None, Field(default=None, description="Comment.")
+        ] = None,
         ftgd_analytics: Annotated[
-            str, Field(default="disable", description="FortiSandbox analytics: disable, suspicious, or all.")
+            str,
+            Field(
+                default="disable",
+                description="FortiSandbox analytics: disable, suspicious, or all.",
+            ),
         ] = "disable",
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Create a new antivirus profile."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -148,7 +208,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def antivirus_settings_get(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Get antivirus engine settings (scan cache, exclusions)."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -164,7 +230,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def webfilter_profile_list(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """List all web filter profiles."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -177,7 +249,13 @@ def register(mcp: FastMCP) -> None:
     async def webfilter_profile_get(
         ctx: Context,
         name: Annotated[str, Field(description="Web filter profile name.")],
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Get a specific web filter profile."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -189,7 +267,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def webfilter_urlfilter_list(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """List all URL filter tables (custom URL block/allow lists)."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -201,7 +285,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def webfilter_override_list(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """List all web filter category override rules."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -213,7 +303,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def webfilter_content_list(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """List all web content filter (keyword) tables."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -229,7 +325,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def application_list_profiles(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """List all Application Control profiles."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -242,7 +344,13 @@ def register(mcp: FastMCP) -> None:
     async def application_list_get(
         ctx: Context,
         name: Annotated[str, Field(description="Application profile name.")],
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Get a specific Application Control profile."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -254,7 +362,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def application_group_list(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """List all application groups."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -270,7 +384,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def dlp_sensor_list(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """List all DLP sensors."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -282,7 +402,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def dlp_dictionary_list(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """List all DLP data dictionaries."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -294,7 +420,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def dlp_filepattern_list(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """List all DLP file pattern tables."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -310,7 +442,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def emailfilter_profile_list(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """List all email filter profiles."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -322,7 +460,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def emailfilter_bwl_list(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """List email filter block/allow lists."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -338,7 +482,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def dnsfilter_profile_list(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """List all DNS filter profiles."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -350,7 +500,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def dnsfilter_domain_filter_list(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """List DNS domain filter tables (custom domain block/allow)."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -366,7 +522,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def file_filter_profile_list(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """List all file filter profiles."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -382,7 +544,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def icap_server_list(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """List all ICAP server configurations."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -394,7 +562,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def icap_profile_list(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """List all ICAP profiles."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -410,7 +584,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def ssh_filter_profile_list(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """List all SSH filter profiles."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -426,7 +606,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def waf_profile_list(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """List all WAF profiles."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -438,7 +624,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def waf_signature_list(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """List all WAF signature configurations."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -454,7 +646,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def voip_profile_list(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """List all VoIP (SIP/SCCP) inspection profiles."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -470,7 +668,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def virtual_patch_profile_list(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """List all Virtual Patch profiles (inline IPS pre-patching)."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -486,7 +690,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def automation_setting_get(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Get global automation settings."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -502,7 +712,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def ztna_server_list(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """List all ZTNA access proxy (application gateway) servers."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -514,7 +730,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def ztna_tag_policy_list(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """List all ZTNA EMS tag (posture check) policies."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]

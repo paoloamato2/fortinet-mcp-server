@@ -23,18 +23,31 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def firewall_policy_list(
         ctx: Context,
-        start: Annotated[int, Field(default=0, description="Offset for pagination.")] = 0,
-        count: Annotated[int, Field(default=200, description="Max number of policies to return.")] = 200,
+        start: Annotated[
+            int, Field(default=0, description="Offset for pagination.")
+        ] = 0,
+        count: Annotated[
+            int, Field(default=200, description="Max number of policies to return.")
+        ] = 200,
         filter_srcintf: Annotated[
-            str | None, Field(default=None, description="Filter by source interface name.")
+            str | None,
+            Field(default=None, description="Filter by source interface name."),
         ] = None,
         filter_dstintf: Annotated[
-            str | None, Field(default=None, description="Filter by destination interface name.")
+            str | None,
+            Field(default=None, description="Filter by destination interface name."),
         ] = None,
         filter_action: Annotated[
-            str | None, Field(default=None, description="Filter by action: accept or deny.")
+            str | None,
+            Field(default=None, description="Filter by action: accept or deny."),
         ] = None,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """List IPv4 firewall policies with optional filters.
 
@@ -61,7 +74,13 @@ def register(mcp: FastMCP) -> None:
     async def firewall_policy_get(
         ctx: Context,
         policy_id: Annotated[int, Field(description="Firewall policy ID number.")],
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Get a specific IPv4 firewall policy by its ID."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -74,20 +93,47 @@ def register(mcp: FastMCP) -> None:
     async def firewall_policy_create(
         ctx: Context,
         name: Annotated[str, Field(description="Policy name.")],
-        srcintf: Annotated[str, Field(description="Source interface name (e.g. 'port1', 'any').")],
-        dstintf: Annotated[str, Field(description="Destination interface name (e.g. 'wan1', 'any').")],
-        srcaddr: Annotated[str, Field(description="Source address name (e.g. 'all', 'LAN_SUBNET').")],
-        dstaddr: Annotated[str, Field(description="Destination address name (e.g. 'all').")],
-        service: Annotated[str, Field(description="Service name (e.g. 'ALL', 'HTTP', 'HTTPS').")],
-        action: Annotated[str, Field(default="accept", description="Policy action: accept or deny.")] = "accept",
-        status: Annotated[str, Field(default="enable", description="Policy status: enable or disable.")] = "enable",
-        nat: Annotated[str, Field(default="disable", description="NAT: enable or disable.")] = "disable",
+        srcintf: Annotated[
+            str, Field(description="Source interface name (e.g. 'port1', 'any').")
+        ],
+        dstintf: Annotated[
+            str, Field(description="Destination interface name (e.g. 'wan1', 'any').")
+        ],
+        srcaddr: Annotated[
+            str, Field(description="Source address name (e.g. 'all', 'LAN_SUBNET').")
+        ],
+        dstaddr: Annotated[
+            str, Field(description="Destination address name (e.g. 'all').")
+        ],
+        service: Annotated[
+            str, Field(description="Service name (e.g. 'ALL', 'HTTP', 'HTTPS').")
+        ],
+        action: Annotated[
+            str, Field(default="accept", description="Policy action: accept or deny.")
+        ] = "accept",
+        status: Annotated[
+            str,
+            Field(default="enable", description="Policy status: enable or disable."),
+        ] = "enable",
+        nat: Annotated[
+            str, Field(default="disable", description="NAT: enable or disable.")
+        ] = "disable",
         logtraffic: Annotated[
             str, Field(default="utm", description="Log traffic: all, utm, or disable.")
         ] = "utm",
-        comments: Annotated[str | None, Field(default=None, description="Policy comment.")] = None,
-        schedule: Annotated[str, Field(default="always", description="Schedule name.")] = "always",
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        comments: Annotated[
+            str | None, Field(default=None, description="Policy comment.")
+        ] = None,
+        schedule: Annotated[
+            str, Field(default="always", description="Schedule name.")
+        ] = "always",
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Create a new IPv4 firewall policy."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -115,13 +161,32 @@ def register(mcp: FastMCP) -> None:
     async def firewall_policy_update(
         ctx: Context,
         policy_id: Annotated[int, Field(description="Firewall policy ID to update.")],
-        name: Annotated[str | None, Field(default=None, description="New policy name.")] = None,
-        action: Annotated[str | None, Field(default=None, description="New action: accept or deny.")] = None,
-        status: Annotated[str | None, Field(default=None, description="Status: enable or disable.")] = None,
-        nat: Annotated[str | None, Field(default=None, description="NAT: enable or disable.")] = None,
-        logtraffic: Annotated[str | None, Field(default=None, description="Log traffic: all, utm, or disable.")] = None,
-        comments: Annotated[str | None, Field(default=None, description="New comment.")] = None,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        name: Annotated[
+            str | None, Field(default=None, description="New policy name.")
+        ] = None,
+        action: Annotated[
+            str | None, Field(default=None, description="New action: accept or deny.")
+        ] = None,
+        status: Annotated[
+            str | None, Field(default=None, description="Status: enable or disable.")
+        ] = None,
+        nat: Annotated[
+            str | None, Field(default=None, description="NAT: enable or disable.")
+        ] = None,
+        logtraffic: Annotated[
+            str | None,
+            Field(default=None, description="Log traffic: all, utm, or disable."),
+        ] = None,
+        comments: Annotated[
+            str | None, Field(default=None, description="New comment.")
+        ] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Update fields of an existing IPv4 firewall policy."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -141,7 +206,9 @@ def register(mcp: FastMCP) -> None:
         if not body:
             return {"error": "No fields to update were specified."}
         try:
-            return await client.cmdb_put(f"firewall/policy/{policy_id}", body, vdom=vdom)
+            return await client.cmdb_put(
+                f"firewall/policy/{policy_id}", body, vdom=vdom
+            )
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
@@ -149,7 +216,13 @@ def register(mcp: FastMCP) -> None:
     async def firewall_policy_delete(
         ctx: Context,
         policy_id: Annotated[int, Field(description="Firewall policy ID to delete.")],
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Delete an IPv4 firewall policy."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -164,12 +237,21 @@ def register(mcp: FastMCP) -> None:
         policy_id: Annotated[int, Field(description="Policy ID to move.")],
         move_action: Annotated[
             str,
-            Field(description="Move action: 'before' or 'after' relative to the neighbor policy."),
+            Field(
+                description="Move action: 'before' or 'after' relative to the neighbor policy."
+            ),
         ],
         neighbor_id: Annotated[
-            int, Field(description="ID of the neighbor policy for relative positioning.")
+            int,
+            Field(description="ID of the neighbor policy for relative positioning."),
         ],
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Move a firewall policy (change its order in the policy table)."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -190,7 +272,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def firewall_policy6_list(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """List all IPv6 firewall policies."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -213,7 +301,13 @@ def register(mcp: FastMCP) -> None:
                 description="Filter by address type: ipmask, iprange, fqdn, geography, wildcard, etc.",
             ),
         ] = None,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """List all IPv4 firewall address objects."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -229,7 +323,13 @@ def register(mcp: FastMCP) -> None:
     async def firewall_address_get(
         ctx: Context,
         name: Annotated[str, Field(description="Address object name.")],
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Get a specific IPv4 firewall address object."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -244,25 +344,46 @@ def register(mcp: FastMCP) -> None:
         name: Annotated[str, Field(description="Address object name.")],
         addr_type: Annotated[
             str,
-            Field(description="Address type: ipmask, iprange, fqdn, geography, wildcard, mac."),
+            Field(
+                description="Address type: ipmask, iprange, fqdn, geography, wildcard, mac."
+            ),
         ],
         subnet: Annotated[
             str | None,
-            Field(default=None, description="Subnet in CIDR or mask format (e.g. '10.0.0.0/24' or '10.0.0.0 255.255.255.0'). Required for type ipmask."),
+            Field(
+                default=None,
+                description="Subnet in CIDR or mask format (e.g. '10.0.0.0/24' or '10.0.0.0 255.255.255.0'). Required for type ipmask.",
+            ),
         ] = None,
-        fqdn: Annotated[str | None, Field(default=None, description="FQDN (required for type fqdn).")] = None,
+        fqdn: Annotated[
+            str | None,
+            Field(default=None, description="FQDN (required for type fqdn)."),
+        ] = None,
         start_ip: Annotated[
-            str | None, Field(default=None, description="Start IP (required for type iprange).")
+            str | None,
+            Field(default=None, description="Start IP (required for type iprange)."),
         ] = None,
         end_ip: Annotated[
-            str | None, Field(default=None, description="End IP (required for type iprange).")
+            str | None,
+            Field(default=None, description="End IP (required for type iprange)."),
         ] = None,
         country: Annotated[
             str | None,
-            Field(default=None, description="Two-letter country code (required for type geography)."),
+            Field(
+                default=None,
+                description="Two-letter country code (required for type geography).",
+            ),
         ] = None,
-        comment: Annotated[str | None, Field(default=None, description="Optional comment.")] = None,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        comment: Annotated[
+            str | None, Field(default=None, description="Optional comment.")
+        ] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Create a new IPv4 firewall address object."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -288,10 +409,22 @@ def register(mcp: FastMCP) -> None:
     async def firewall_address_update(
         ctx: Context,
         name: Annotated[str, Field(description="Address object name to update.")],
-        subnet: Annotated[str | None, Field(default=None, description="New subnet.")] = None,
-        fqdn: Annotated[str | None, Field(default=None, description="New FQDN.")] = None,
-        comment: Annotated[str | None, Field(default=None, description="New comment.")] = None,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        subnet: Annotated[
+            str | None, Field(default=None, description="New subnet.")
+        ] = None,
+        fqdn: Annotated[
+            str | None, Field(default=None, description="New FQDN.")
+        ] = None,
+        comment: Annotated[
+            str | None, Field(default=None, description="New comment.")
+        ] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Update an IPv4 firewall address object."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -313,7 +446,13 @@ def register(mcp: FastMCP) -> None:
     async def firewall_address_delete(
         ctx: Context,
         name: Annotated[str, Field(description="Address object name to delete.")],
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Delete an IPv4 firewall address object."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -329,7 +468,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def firewall_addrgrp_list(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """List all IPv4 firewall address groups."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -342,7 +487,13 @@ def register(mcp: FastMCP) -> None:
     async def firewall_addrgrp_get(
         ctx: Context,
         name: Annotated[str, Field(description="Address group name.")],
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Get a specific IPv4 address group and its members."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -357,10 +508,20 @@ def register(mcp: FastMCP) -> None:
         name: Annotated[str, Field(description="Address group name.")],
         members: Annotated[
             list[str],
-            Field(description="List of address or address group names to include as members."),
+            Field(
+                description="List of address or address group names to include as members."
+            ),
         ],
-        comment: Annotated[str | None, Field(default=None, description="Optional comment.")] = None,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        comment: Annotated[
+            str | None, Field(default=None, description="Optional comment.")
+        ] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Create a new IPv4 address group."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -379,7 +540,13 @@ def register(mcp: FastMCP) -> None:
     async def firewall_addrgrp_delete(
         ctx: Context,
         name: Annotated[str, Field(description="Address group name to delete.")],
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Delete an IPv4 address group."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -395,7 +562,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def firewall_service_list(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """List all custom firewall service objects."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -408,7 +581,13 @@ def register(mcp: FastMCP) -> None:
     async def firewall_service_get(
         ctx: Context,
         name: Annotated[str, Field(description="Service object name.")],
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Get a specific custom firewall service object."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -426,13 +605,24 @@ def register(mcp: FastMCP) -> None:
         ],
         tcp_portrange: Annotated[
             str | None,
-            Field(default=None, description="TCP port range (e.g. '80', '8080-8090', '80 443')."),
+            Field(
+                default=None,
+                description="TCP port range (e.g. '80', '8080-8090', '80 443').",
+            ),
         ] = None,
         udp_portrange: Annotated[
             str | None, Field(default=None, description="UDP port range.")
         ] = None,
-        comment: Annotated[str | None, Field(default=None, description="Comment.")] = None,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        comment: Annotated[
+            str | None, Field(default=None, description="Comment.")
+        ] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Create a new custom service object."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -451,7 +641,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def firewall_service_grp_list(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """List all firewall service groups."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -467,7 +663,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def firewall_vip_list(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """List all Virtual IP (DNAT) objects."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -480,7 +682,13 @@ def register(mcp: FastMCP) -> None:
     async def firewall_vip_get(
         ctx: Context,
         name: Annotated[str, Field(description="VIP object name.")],
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Get a specific Virtual IP (DNAT) object."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -493,21 +701,49 @@ def register(mcp: FastMCP) -> None:
     async def firewall_vip_create(
         ctx: Context,
         name: Annotated[str, Field(description="VIP name.")],
-        external_ip: Annotated[str, Field(description="External (public) IP address or range.")],
-        mapped_ip: Annotated[str, Field(description="Internal (mapped) IP address or range.")],
-        interface: Annotated[str, Field(default="any", description="External interface (default: any).")] = "any",
-        portforward: Annotated[str, Field(default="disable", description="Enable port forwarding: enable or disable.")] = "disable",
+        external_ip: Annotated[
+            str, Field(description="External (public) IP address or range.")
+        ],
+        mapped_ip: Annotated[
+            str, Field(description="Internal (mapped) IP address or range.")
+        ],
+        interface: Annotated[
+            str, Field(default="any", description="External interface (default: any).")
+        ] = "any",
+        portforward: Annotated[
+            str,
+            Field(
+                default="disable",
+                description="Enable port forwarding: enable or disable.",
+            ),
+        ] = "disable",
         external_port: Annotated[
-            str | None, Field(default=None, description="External port(s) (e.g. '8080' or '8080-8090').")
+            str | None,
+            Field(
+                default=None,
+                description="External port(s) (e.g. '8080' or '8080-8090').",
+            ),
         ] = None,
         mapped_port: Annotated[
             str | None, Field(default=None, description="Internal mapped port(s).")
         ] = None,
         protocol: Annotated[
-            str, Field(default="tcp", description="Protocol for port forwarding: tcp, udp, or sctp.")
+            str,
+            Field(
+                default="tcp",
+                description="Protocol for port forwarding: tcp, udp, or sctp.",
+            ),
         ] = "tcp",
-        comment: Annotated[str | None, Field(default=None, description="Comment.")] = None,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        comment: Annotated[
+            str | None, Field(default=None, description="Comment.")
+        ] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Create a new Virtual IP (DNAT/port-forward) object."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -534,7 +770,13 @@ def register(mcp: FastMCP) -> None:
     async def firewall_vip_delete(
         ctx: Context,
         name: Annotated[str, Field(description="VIP name to delete.")],
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Delete a Virtual IP object."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -550,7 +792,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def firewall_vipgrp_list(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """List all VIP groups."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -566,7 +814,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def firewall_ippool_list(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """List all IP pool (source NAT) objects."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -583,10 +837,21 @@ def register(mcp: FastMCP) -> None:
         end_ip: Annotated[str, Field(description="End IP of the NAT pool.")],
         pool_type: Annotated[
             str,
-            Field(default="overload", description="NAT pool type: overload, one-to-one, fixed-port-range, port-block-allocation."),
+            Field(
+                default="overload",
+                description="NAT pool type: overload, one-to-one, fixed-port-range, port-block-allocation.",
+            ),
         ] = "overload",
-        comment: Annotated[str | None, Field(default=None, description="Comment.")] = None,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        comment: Annotated[
+            str | None, Field(default=None, description="Comment.")
+        ] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Create a new IP pool (source NAT pool) object."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -610,7 +875,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def firewall_schedule_one_time_list(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """List all one-time schedules."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -622,7 +893,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def firewall_schedule_recurring_list(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """List all recurring schedules."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -638,7 +915,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def firewall_central_snat_list(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """List all central SNAT (outgoing NAT) rules."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -654,7 +937,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def firewall_ssl_ssh_profile_list(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """List all SSL/SSH deep inspection profiles."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -670,7 +959,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def firewall_shaping_policy_list(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """List all traffic shaping policies."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -686,13 +981,36 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def monitor_firewall_session_list(
         ctx: Context,
-        count: Annotated[int, Field(default=100, description="Max number of sessions to return.")] = 100,
-        srcaddr: Annotated[str | None, Field(default=None, description="Filter by source IP address.")] = None,
-        dstaddr: Annotated[str | None, Field(default=None, description="Filter by destination IP address.")] = None,
-        srcport: Annotated[int | None, Field(default=None, description="Filter by source port.")] = None,
-        dstport: Annotated[int | None, Field(default=None, description="Filter by destination port.")] = None,
-        protocol: Annotated[int | None, Field(default=None, description="Filter by IP protocol number (e.g. 6 for TCP).")] = None,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        count: Annotated[
+            int, Field(default=100, description="Max number of sessions to return.")
+        ] = 100,
+        srcaddr: Annotated[
+            str | None, Field(default=None, description="Filter by source IP address.")
+        ] = None,
+        dstaddr: Annotated[
+            str | None,
+            Field(default=None, description="Filter by destination IP address."),
+        ] = None,
+        srcport: Annotated[
+            int | None, Field(default=None, description="Filter by source port.")
+        ] = None,
+        dstport: Annotated[
+            int | None, Field(default=None, description="Filter by destination port.")
+        ] = None,
+        protocol: Annotated[
+            int | None,
+            Field(
+                default=None,
+                description="Filter by IP protocol number (e.g. 6 for TCP).",
+            ),
+        ] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """List active firewall sessions with optional filters."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -720,7 +1038,13 @@ def register(mcp: FastMCP) -> None:
         srcport: Annotated[int, Field(description="Source port.")],
         dstaddr: Annotated[str, Field(description="Destination IP address.")],
         dstport: Annotated[int, Field(description="Destination port.")],
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Close a specific active firewall session."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -739,7 +1063,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def monitor_firewall_policy_stats(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Get hit counts, bytes, and packet statistics per firewall policy."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -751,7 +1081,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def monitor_firewall_address_dynamic(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Get resolved IPs for all dynamic/FQDN firewall address objects."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
@@ -763,7 +1099,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def monitor_firewall_ip_list(
         ctx: Context,
-        vdom: Annotated[str | None, Field(default=None, description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).")] = None,
+        vdom: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """List active banned/exempt IPs in the firewall."""
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]

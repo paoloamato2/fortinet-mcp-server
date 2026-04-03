@@ -13,7 +13,9 @@ logger = logging.getLogger(__name__)
 class FortiOSError(Exception):
     """Raised on FortiOS API errors."""
 
-    def __init__(self, message: str, status_code: int = 0, data: dict | None = None) -> None:
+    def __init__(
+        self, message: str, status_code: int = 0, data: dict | None = None
+    ) -> None:
         super().__init__(message)
         self.status_code = status_code
         self.data = data or {}
@@ -91,7 +93,9 @@ class FortiOSClient:
             )
         return self._client
 
-    def _vdom_params(self, extra: dict[str, Any] | None = None, vdom: str | None = None) -> dict[str, Any]:
+    def _vdom_params(
+        self, extra: dict[str, Any] | None = None, vdom: str | None = None
+    ) -> dict[str, Any]:
         params: dict[str, Any] = {"vdom": vdom or self.vdom}
         if extra:
             params.update({k: v for k, v in extra.items() if v is not None})
@@ -198,7 +202,9 @@ class FortiOSClient:
         """POST /api/v2/monitor/{path} — trigger a monitor action."""
         client = self._client_guard()
         url = f"{self._BASE}/monitor/{path.lstrip('/')}"
-        resp = await client.post(url, json=body or {}, params=self._vdom_params(params, vdom))
+        resp = await client.post(
+            url, json=body or {}, params=self._vdom_params(params, vdom)
+        )
         return self._check_response(resp)
 
     # ------------------------------------------------------------------
@@ -227,7 +233,9 @@ class FortiOSClient:
         """POST /api/v2/log/{path} — start a log search or action."""
         client = self._client_guard()
         url = f"{self._BASE}/log/{path.lstrip('/')}"
-        resp = await client.post(url, json=body or {}, params=self._vdom_params(params, vdom))
+        resp = await client.post(
+            url, json=body or {}, params=self._vdom_params(params, vdom)
+        )
         return self._check_response(resp)
 
     # ------------------------------------------------------------------
@@ -256,5 +264,7 @@ class FortiOSClient:
         """POST /api/v2/service/{path}."""
         client = self._client_guard()
         url = f"{self._BASE}/service/{path.lstrip('/')}"
-        resp = await client.post(url, json=body or {}, params=self._vdom_params(params, vdom))
+        resp = await client.post(
+            url, json=body or {}, params=self._vdom_params(params, vdom)
+        )
         return self._check_response(resp)
