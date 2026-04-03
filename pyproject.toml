@@ -2,14 +2,37 @@
 name = "fortios-mcp-server"
 version = "1.0.0"
 description = "MCP Server for Fortinet FortiOS 7.6.6 REST API"
+authors = [
+    {name = "Paolo Amato", email = "paoloamato1313@gmail.com"}
+]
 readme = "README.md"
+license = {text = "MIT"}
 requires-python = ">=3.11"
+keywords = ["mcp", "fortinet", "fortios", "firewall", "llm", "claude"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Communications :: Chat",
+    "Topic :: Security",
+    "Topic :: System :: Networking :: Firewalls"
+]
 dependencies = [
     "mcp[cli]>=1.9.0",
     "httpx>=0.28.0",
     "pydantic>=2.10.0",
     "python-dotenv>=1.0.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/paoloamato2/fortinet-mcp-server"
+Repository = "https://github.com/paoloamato2/fortinet-mcp-server"
+Issues = "https://github.com/paoloamato2/fortinet-mcp-server/issues"
 
 [project.scripts]
 fortios-mcp = "server:main"
@@ -26,4 +49,6 @@ dev-dependencies = [
     "pytest>=8.0.0",
     "pytest-asyncio>=0.24.0",
     "pytest-httpx>=0.35.0",
+    "ruff>=0.9.0",
+    "pyright>=1.1.350",
 ]
