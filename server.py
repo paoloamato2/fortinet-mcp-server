@@ -31,7 +31,18 @@ from mcp.server.fastmcp import FastMCP
 from fortios_client import FortiOSClient
 
 # ── Tool modules ──────────────────────────────────────────────────────
-from tools import generic, system, firewall, vpn, router, user, monitor, log, security, wireless
+from tools import (
+    generic,
+    system,
+    firewall,
+    vpn,
+    router,
+    user,
+    monitor,
+    log,
+    security,
+    wireless,
+)
 
 # Load .env if present
 load_dotenv()
@@ -48,6 +59,7 @@ logger = logging.getLogger("fortios_mcp")
 # Configuration
 # ─────────────────────────────────────────────────────────────────────
 
+
 def _required_env(name: str) -> str:
     value = os.environ.get(name, "").strip()
     if not value:
@@ -63,7 +75,8 @@ def _get_config() -> dict:
         "host": _required_env("FORTIOS_HOST"),
         "api_token": _required_env("FORTIOS_API_TOKEN"),
         "vdom": os.environ.get("FORTIOS_VDOM", "root").strip(),
-        "verify_ssl": os.environ.get("FORTIOS_VERIFY_SSL", "false").lower() in ("1", "true", "yes"),
+        "verify_ssl": os.environ.get("FORTIOS_VERIFY_SSL", "false").lower()
+        in ("1", "true", "yes"),
         "timeout": float(os.environ.get("FORTIOS_TIMEOUT", "30")),
     }
 
@@ -71,6 +84,7 @@ def _get_config() -> dict:
 # ─────────────────────────────────────────────────────────────────────
 # Lifespan — shared FortiOS client
 # ─────────────────────────────────────────────────────────────────────
+
 
 @asynccontextmanager
 async def lifespan(server: FastMCP) -> AsyncGenerator[dict, None]:
@@ -101,6 +115,8 @@ async def lifespan(server: FastMCP) -> AsyncGenerator[dict, None]:
 
 mcp = FastMCP(
     name="FortiOS MCP Server",
+    host=os.environ.get("MCP_HOST", "127.0.0.1"),
+    port=int(os.environ.get("MCP_PORT", "8000")),
     instructions=(
         "You are connected to a Fortinet FortiGate running FortiOS 7.6.6. "
         "This server exposes the complete FortiOS REST API as MCP tools. "
@@ -147,6 +163,7 @@ logger.info("All 10 tool modules registered (204+ tools).")
 # Entry point
 # ─────────────────────────────────────────────────────────────────────
 
+
 def main() -> None:
     """Run the MCP server using stdio transport (default for Claude Desktop)."""
     transport = os.environ.get("MCP_TRANSPORT", "stdio")
@@ -154,7 +171,7 @@ def main() -> None:
         host = os.environ.get("MCP_HOST", "127.0.0.1")
         port = int(os.environ.get("MCP_PORT", "8000"))
         logger.info("Starting FortiOS MCP Server on %s:%d (HTTP)", host, port)
-        mcp.run(transport="streamable-http", host=host, port=port)
+        mcp.run(transport="streamable-http")
     else:
         logger.info("Starting FortiOS MCP Server on stdio")
         mcp.run(transport="stdio")
