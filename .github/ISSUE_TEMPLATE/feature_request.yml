@@ -1,0 +1,53 @@
+name: Feature Request
+description: Suggest an idea for this project
+title: "[FEAT] "
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to share a new idea or missing feature! 
+        Please provide details about the specific FortiOS API endpoint(s) you wish to support.
+
+  - type: input
+    id: feature_name
+    attributes:
+      label: Feature / Tool Name
+      description: What new MCP tool(s) are you suggesting? (e.g. `vpn_ipsec_stats`)
+      placeholder: "vpn_ipsec_stats"
+    validations:
+      required: true
+  
+  - type: input
+    id: endpoint
+    attributes:
+      label: FortiOS API Endpoint
+      description: If applicable, which API path does this feature correspond to?
+      placeholder: "/api/v2/monitor/vpn/ipsec"
+    validations:
+      required: false
+
+  - type: textarea
+    id: use_case
+    attributes:
+      label: Use case / motivation
+      description: Why do you need this feature? How will you use it with an LLM? (e.g. "I want the LLM to be able to troubleshoot my tunnels.")
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed_implementation
+    attributes:
+      label: Proposed Implementation
+      description: If you have an idea of how this should be implemented in `fortinet-mcp-server`, let us know. Would you be willing to submit a PR?
+    validations:
+      required: false
+
+  - type: input
+    id: docs
+    attributes:
+      label: Fortinet Documentation Links
+      description: If you have links to the official FortiOS documentation for the proposed feature, paste them here.
+      placeholder: "https://docs.fortinet.com/document/fortigate/7.6.0/fortios-rest-api/"
+    validations:
+      required: false
