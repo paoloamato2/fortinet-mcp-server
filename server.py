@@ -22,13 +22,13 @@ from __future__ import annotations
 import logging
 import os
 import sys
-from contextlib import asynccontextmanager
+from contextlib import AsyncExitStack, asynccontextmanager
 from typing import AsyncGenerator
 
 from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
 
-from fortios_client import FortiOSClient
+from instances import InstanceRegistry, load_instances, roster_text
 
 # ── Tool modules ──────────────────────────────────────────────────────
 from tools import (
@@ -56,57 +56,57 @@ logger = logging.getLogger("fortios_mcp")
 
 
 # ─────────────────────────────────────────────────────────────────────
-# Configuration
+# Fleet roster for the instructions block
+#
+# Loaded tolerantly at import so `import server` keeps working with no
+# environment set (tests/test_server.py relies on this). The lifespan below
+# repeats the load strictly and refuses to start on any error.
 # ─────────────────────────────────────────────────────────────────────
 
-
-def _required_env(name: str) -> str:
-    value = os.environ.get(name, "").strip()
-    if not value:
-        raise EnvironmentError(
-            f"Required environment variable '{name}' is not set. "
-            f"Copy .env.example to .env and fill in your values."
-        )
-    return value
-
-
-def _get_config() -> dict:
-    return {
-        "host": _required_env("FORTIOS_HOST"),
-        "api_token": _required_env("FORTIOS_API_TOKEN"),
-        "vdom": os.environ.get("FORTIOS_VDOM", "root").strip(),
-        "verify_ssl": os.environ.get("FORTIOS_VERIFY_SSL", "false").lower()
-        in ("1", "true", "yes"),
-        "timeout": float(os.environ.get("FORTIOS_TIMEOUT", "30")),
-    }
+_IMPORT_INSTANCES, _ = load_instances()
 
 
 # ─────────────────────────────────────────────────────────────────────
-# Lifespan — shared FortiOS client
+# Lifespan — one FortiOS client per configured FortiGate
 # ─────────────────────────────────────────────────────────────────────
 
 
 @asynccontextmanager
 async def lifespan(server: FastMCP) -> AsyncGenerator[dict, None]:
-    """Create and manage the FortiOS API client lifecycle."""
-    cfg = _get_config()
-    logger.info(
-        "Connecting to FortiGate %s (vdom=%s, ssl-verify=%s)",
-        cfg["host"],
-        cfg["vdom"],
-        cfg["verify_ssl"],
-    )
-    client = FortiOSClient(
-        host=cfg["host"],
-        api_token=cfg["api_token"],
-        vdom=cfg["vdom"],
-        verify_ssl=cfg["verify_ssl"],
-        timeout=cfg["timeout"],
-    )
-    async with client:
-        logger.info("FortiOS client initialized.")
-        yield {"client": client}
-    logger.info("FortiOS client closed.")
+    """Create and manage one FortiOS API client per configured FortiGate."""
+    instances, errors = load_instances()
+    if errors:
+        raise EnvironmentError(
+            "FortiGate instance configuration is invalid:\n  - " + "\n  - ".join(errors)
+        )
+    if not instances:
+        raise EnvironmentError(
+            "No FortiGate instances configured. Set FORTIOS_INSTANCES_FILE to a "
+            "JSON file, or FORTIOS_HOST and FORTIOS_API_TOKEN for a single device."
+        )
+
+    registry = InstanceRegistry(instances)
+    for cfg in instances:
+        logger.info(
+            "FortiGate '%s' → %s (vdom=%s, ssl-verify=%s, read-only=%s)",
+            cfg.name,
+            cfg.host,
+            cfg.vdom,
+            cfg.verify_ssl,
+            cfg.read_only,
+        )
+
+    async with AsyncExitStack() as stack:
+        for client in registry.clients.values():
+            await stack.enter_async_context(client)
+        logger.info("%d FortiGate client(s) initialized.", len(instances))
+        yield {
+            "registry": registry,
+            # Transitional: keeps not-yet-migrated tools working. Removed in
+            # the commit that migrates the last tool module.
+            "client": next(iter(registry.clients.values())),
+        }
+    logger.info("FortiGate clients closed.")
 
 
 # ─────────────────────────────────────────────────────────────────────
@@ -118,9 +118,10 @@ mcp = FastMCP(
     host=os.environ.get("MCP_HOST", "127.0.0.1"),
     port=int(os.environ.get("MCP_PORT", "8000")),
     instructions=(
-        "You are connected to a Fortinet FortiGate running FortiOS 7.6.6. "
+        "You are connected to one or more Fortinet FortiGates running "
+        "FortiOS 7.6.6. "
         "This server exposes the complete FortiOS REST API as MCP tools. "
-        "\n\n"
+        "\n\n" + roster_text(_IMPORT_INSTANCES) + "\n\n"
         "Tool categories:\n"
         "- **Generic**: cmdb_list/get/create/update/delete, monitor_get/action, log_get, service_call\n"
         "    → These cover ALL 1536 FortiOS API endpoints directly.\n"
