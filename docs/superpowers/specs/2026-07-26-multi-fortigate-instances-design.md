@@ -35,9 +35,11 @@ All 243 client call sites in `tools/*.py` are bare `return await client.<method>
 with **zero post-processing** (verified by grep: 243 direct returns, 0 assignments). This
 is what makes the read-only guard and the fan-out possible in the client layer alone.
 
-Two further verified facts shape the rollout: all 240 tools have a `vdom` parameter, and
-in 239 of them it is the last parameter (`wifi_vap_create` in `tools/wireless.py` is the
-exception, with two params after `vdom`).
+Three further verified facts shape the rollout: all 240 tools have a `vdom` parameter; in
+239 of them it is the last parameter (`wifi_vap_create` in `tools/wireless.py` is the
+exception, with two params after `vdom`); and all 240 client-lookup lines are
+byte-identical, with `FortiOSClient` appearing in each module exactly `lookups + 1` times —
+only in those annotations and the import.
 
 ## Architecture
 
@@ -147,7 +149,9 @@ layer — violating CLAUDE.md's "never let it propagate" rule — and avoiding t
 surgically relocating 240 varied `try` blocks.
 
 Instead `resolve()` returns one of three objects satisfying a shared `FortiOSAPI` Protocol
-that declares the eight API methods (this keeps `pyright` satisfied at the 240 call sites):
+that declares all ten API methods — four reads (`cmdb_get`, `monitor_get`, `log_get`,
+`service_get`) and six writes (`cmdb_post`, `cmdb_put`, `cmdb_delete`, `monitor_post`,
+`log_post`, `service_post`). This keeps `pyright` satisfied at the 240 call sites:
 
 - **`FortiOSClient`** — the real client, for a valid single target.
 - **`FanOutClient`** — returned for `instance="*"`. Read methods run every configured
