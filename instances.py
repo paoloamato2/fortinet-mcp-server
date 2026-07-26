@@ -7,10 +7,12 @@ environment variables ``FORTIOS_HOST`` / ``FORTIOS_API_TOKEN``.
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import os
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Protocol
@@ -417,6 +419,130 @@ class ErrorClient:
         return self._fail()
 
 
+class FanOutClient:
+    """Runs read operations against every configured FortiGate concurrently.
+
+    Returned by :meth:`InstanceRegistry.resolve` for ``instance="*"``. Reads
+    return a mapping of instance name to that instance's response, in
+    configuration order; an instance that fails contributes the same
+    ``{"error": ..., "status_code": ...}`` shape a single failed call would
+    produce, so one unreachable device never fails the whole query. Writes are
+    refused outright.
+    """
+
+    def __init__(self, clients: Mapping[str, FortiOSAPI]) -> None:
+        self._clients = clients
+
+    async def _gather(self, method: str, *args: Any, **kwargs: Any) -> dict[str, Any]:
+        names = list(self._clients)
+        results = await asyncio.gather(
+            *(getattr(self._clients[n], method)(*args, **kwargs) for n in names),
+            return_exceptions=True,
+        )
+        merged: dict[str, Any] = {}
+        for name, result in zip(names, results):
+            if isinstance(result, BaseException):
+                merged[name] = {
+                    "error": str(result),
+                    "status_code": getattr(result, "status_code", 0),
+                }
+            else:
+                merged[name] = result
+        return merged
+
+    def _refuse(self) -> dict[str, Any]:
+        raise FortiOSError(
+            "instance='*' fan-out is read-only. "
+            "Target a single instance for write operations.",
+            0,
+        )
+
+    async def cmdb_get(
+        self,
+        path: str,
+        params: dict[str, Any] | None = None,
+        vdom: str | None = None,
+    ) -> dict[str, Any]:
+        return await self._gather("cmdb_get", path, params, vdom=vdom)
+
+    async def cmdb_post(
+        self,
+        path: str,
+        body: dict[str, Any],
+        params: dict[str, Any] | None = None,
+        vdom: str | None = None,
+    ) -> dict[str, Any]:
+        return self._refuse()
+
+    async def cmdb_put(
+        self,
+        path: str,
+        body: dict[str, Any],
+        params: dict[str, Any] | None = None,
+        vdom: str | None = None,
+    ) -> dict[str, Any]:
+        return self._refuse()
+
+    async def cmdb_delete(
+        self,
+        path: str,
+        params: dict[str, Any] | None = None,
+        vdom: str | None = None,
+    ) -> dict[str, Any]:
+        return self._refuse()
+
+    async def monitor_get(
+        self,
+        path: str,
+        params: dict[str, Any] | None = None,
+        vdom: str | None = None,
+    ) -> dict[str, Any]:
+        return await self._gather("monitor_get", path, params, vdom=vdom)
+
+    async def monitor_post(
+        self,
+        path: str,
+        body: dict[str, Any] | None = None,
+        params: dict[str, Any] | None = None,
+        vdom: str | None = None,
+    ) -> dict[str, Any]:
+        return self._refuse()
+
+    async def log_get(
+        self,
+        path: str,
+        params: dict[str, Any] | None = None,
+        vdom: str | None = None,
+    ) -> dict[str, Any]:
+        return await self._gather("log_get", path, params, vdom=vdom)
+
+    async def log_post(
+        self,
+        path: str,
+        body: dict[str, Any] | None = None,
+        params: dict[str, Any] | None = None,
+        vdom: str | None = None,
+    ) -> dict[str, Any]:
+        return self._refuse()
+
+    async def service_get(
+        self,
+        path: str,
+        params: dict[str, Any] | None = None,
+        vdom: str | None = None,
+    ) -> dict[str, Any]:
+        return await self._gather("service_get", path, params, vdom=vdom)
+
+    async def service_post(
+        self,
+        path: str,
+        body: dict[str, Any] | None = None,
+        params: dict[str, Any] | None = None,
+        vdom: str | None = None,
+    ) -> dict[str, Any]:
+        return self._refuse()
+
+
 def roster_text(instances: list[InstanceConfig]) -> str:
     """Render the fleet roster for the server's MCP instructions block."""
     if not instances:
@@ -493,7 +619,7 @@ class InstanceRegistry:
             )
 
         if target == FAN_OUT:
-            return ErrorClient("instance='*' fan-out is not available in this build.")
+            return FanOutClient(self._clients)
 
         client = self._clients.get(target)
         if client is None:
