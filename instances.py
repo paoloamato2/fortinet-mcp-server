@@ -13,7 +13,9 @@ import os
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol
+
+from fortios_client import FortiOSClient, FortiOSError
 
 logger = logging.getLogger(__name__)
 
@@ -226,3 +228,276 @@ def load_instances() -> tuple[list[InstanceConfig], list[str]]:
             "FORTIOS_HOST is ignored."
         )
     return _load_from_file(path, defaults, errors), errors
+
+
+class FortiOSAPI(Protocol):
+    """Structural type shared by the real client and the registry's stand-ins.
+
+    Declares the ten FortiOS API methods so tools can be annotated against a
+    single type regardless of which object ``InstanceRegistry.resolve`` hands
+    back.
+    """
+
+    async def cmdb_get(
+        self,
+        path: str,
+        params: dict[str, Any] | None = None,
+        vdom: str | None = None,
+    ) -> dict[str, Any]: ...
+
+    async def cmdb_post(
+        self,
+        path: str,
+        body: dict[str, Any],
+        params: dict[str, Any] | None = None,
+        vdom: str | None = None,
+    ) -> dict[str, Any]: ...
+
+    async def cmdb_put(
+        self,
+        path: str,
+        body: dict[str, Any],
+        params: dict[str, Any] | None = None,
+        vdom: str | None = None,
+    ) -> dict[str, Any]: ...
+
+    async def cmdb_delete(
+        self,
+        path: str,
+        params: dict[str, Any] | None = None,
+        vdom: str | None = None,
+    ) -> dict[str, Any]: ...
+
+    async def monitor_get(
+        self,
+        path: str,
+        params: dict[str, Any] | None = None,
+        vdom: str | None = None,
+    ) -> dict[str, Any]: ...
+
+    async def monitor_post(
+        self,
+        path: str,
+        body: dict[str, Any] | None = None,
+        params: dict[str, Any] | None = None,
+        vdom: str | None = None,
+    ) -> dict[str, Any]: ...
+
+    async def log_get(
+        self,
+        path: str,
+        params: dict[str, Any] | None = None,
+        vdom: str | None = None,
+    ) -> dict[str, Any]: ...
+
+    async def log_post(
+        self,
+        path: str,
+        body: dict[str, Any] | None = None,
+        params: dict[str, Any] | None = None,
+        vdom: str | None = None,
+    ) -> dict[str, Any]: ...
+
+    async def service_get(
+        self,
+        path: str,
+        params: dict[str, Any] | None = None,
+        vdom: str | None = None,
+    ) -> dict[str, Any]: ...
+
+    async def service_post(
+        self,
+        path: str,
+        body: dict[str, Any] | None = None,
+        params: dict[str, Any] | None = None,
+        vdom: str | None = None,
+    ) -> dict[str, Any]: ...
+
+
+class ErrorClient:
+    """Stand-in returned when a target instance cannot be resolved.
+
+    Every method raises :class:`FortiOSError`, so the ``except FortiOSError``
+    block each tool already has converts the resolution failure into the
+    standard ``{"error": ..., "status_code": ...}`` payload. This is why
+    :meth:`InstanceRegistry.resolve` can promise never to raise, even though
+    the 240 tool call sites look it up outside their ``try`` blocks.
+    """
+
+    def __init__(self, message: str, status_code: int = 0) -> None:
+        self.message = message
+        self.status_code = status_code
+
+    def _fail(self) -> dict[str, Any]:
+        raise FortiOSError(self.message, self.status_code)
+
+    async def cmdb_get(
+        self,
+        path: str,
+        params: dict[str, Any] | None = None,
+        vdom: str | None = None,
+    ) -> dict[str, Any]:
+        return self._fail()
+
+    async def cmdb_post(
+        self,
+        path: str,
+        body: dict[str, Any],
+        params: dict[str, Any] | None = None,
+        vdom: str | None = None,
+    ) -> dict[str, Any]:
+        return self._fail()
+
+    async def cmdb_put(
+        self,
+        path: str,
+        body: dict[str, Any],
+        params: dict[str, Any] | None = None,
+        vdom: str | None = None,
+    ) -> dict[str, Any]:
+        return self._fail()
+
+    async def cmdb_delete(
+        self,
+        path: str,
+        params: dict[str, Any] | None = None,
+        vdom: str | None = None,
+    ) -> dict[str, Any]:
+        return self._fail()
+
+    async def monitor_get(
+        self,
+        path: str,
+        params: dict[str, Any] | None = None,
+        vdom: str | None = None,
+    ) -> dict[str, Any]:
+        return self._fail()
+
+    async def monitor_post(
+        self,
+        path: str,
+        body: dict[str, Any] | None = None,
+        params: dict[str, Any] | None = None,
+        vdom: str | None = None,
+    ) -> dict[str, Any]:
+        return self._fail()
+
+    async def log_get(
+        self,
+        path: str,
+        params: dict[str, Any] | None = None,
+        vdom: str | None = None,
+    ) -> dict[str, Any]:
+        return self._fail()
+
+    async def log_post(
+        self,
+        path: str,
+        body: dict[str, Any] | None = None,
+        params: dict[str, Any] | None = None,
+        vdom: str | None = None,
+    ) -> dict[str, Any]:
+        return self._fail()
+
+    async def service_get(
+        self,
+        path: str,
+        params: dict[str, Any] | None = None,
+        vdom: str | None = None,
+    ) -> dict[str, Any]:
+        return self._fail()
+
+    async def service_post(
+        self,
+        path: str,
+        body: dict[str, Any] | None = None,
+        params: dict[str, Any] | None = None,
+        vdom: str | None = None,
+    ) -> dict[str, Any]:
+        return self._fail()
+
+
+def roster_text(instances: list[InstanceConfig]) -> str:
+    """Render the fleet roster for the server's MCP instructions block."""
+    if not instances:
+        return (
+            "No FortiGate instances are configured. Set FORTIOS_INSTANCES_FILE to a "
+            "JSON file, or FORTIOS_HOST and FORTIOS_API_TOKEN for a single device, "
+            "then restart the server."
+        )
+
+    lines = [
+        "Configured FortiGates — pass the name as the `instance` parameter on any tool:"
+    ]
+    for cfg in instances:
+        suffix = " [READ-ONLY]" if cfg.read_only else ""
+        lines.append(f"- {cfg.name} — {cfg.description}{suffix}")
+
+    if len(instances) == 1:
+        lines.append("Only one FortiGate is configured, so `instance` may be omitted.")
+    else:
+        lines.append(
+            "`instance` is required on every tool call. "
+            'Use instance="*" to read from all FortiGates at once.'
+        )
+    return "\n".join(lines)
+
+
+class InstanceRegistry:
+    """Holds one live client per configured FortiGate and resolves targets."""
+
+    def __init__(self, instances: list[InstanceConfig]) -> None:
+        self._configs: dict[str, InstanceConfig] = {c.name: c for c in instances}
+        self._clients: dict[str, FortiOSClient] = {
+            c.name: FortiOSClient(
+                host=c.host,
+                api_token=c.api_token,
+                vdom=c.vdom,
+                verify_ssl=c.verify_ssl,
+                timeout=c.timeout,
+                name=c.name,
+                read_only=c.read_only,
+            )
+            for c in instances
+        }
+
+    @property
+    def configs(self) -> list[InstanceConfig]:
+        """The configured instances, in file order."""
+        return list(self._configs.values())
+
+    @property
+    def clients(self) -> dict[str, FortiOSClient]:
+        """The live clients, keyed by instance name, in file order."""
+        return self._clients
+
+    def names(self) -> list[str]:
+        """Configured instance names, in file order."""
+        return list(self._configs)
+
+    def resolve(self, instance: str | None) -> FortiOSAPI:
+        """Return the API object for ``instance``. Never raises.
+
+        On any resolution failure an :class:`ErrorClient` is returned whose
+        methods raise, so the caller's existing ``except FortiOSError`` handles
+        it. See :class:`ErrorClient` for why.
+        """
+        target = (instance or "").strip()
+
+        if not target:
+            if len(self._clients) == 1:
+                return next(iter(self._clients.values()))
+            return ErrorClient(
+                f"'instance' is required: {len(self._clients)} FortiGates "
+                f"configured. Choose one of: {', '.join(self.names())}"
+            )
+
+        if target == FAN_OUT:
+            return ErrorClient("instance='*' fan-out is not available in this build.")
+
+        client = self._clients.get(target)
+        if client is None:
+            return ErrorClient(
+                f"Unknown instance {target!r}. Configured: {', '.join(self.names())}"
+            )
+        return client
