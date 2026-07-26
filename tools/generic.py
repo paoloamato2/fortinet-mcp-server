@@ -13,7 +13,8 @@ from typing import Annotated, Any
 from mcp.server.fastmcp import FastMCP, Context
 from pydantic import Field
 
-from fortios_client import FortiOSClient, FortiOSError
+from fortios_client import FortiOSError
+from instances import FortiOSAPI
 
 
 def register(mcp: FastMCP) -> None:  # noqa: C901
@@ -63,6 +64,16 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
                 description="Comma-separated list of fields to return. Reduces response size.",
             ),
         ] = None,
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -76,7 +87,9 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
         Covers any GET on /api/v2/cmdb/{resource_path}.
         Returns the full FortiOS JSON response including results array and metadata.
         """
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         params: dict[str, Any] = {}
         if filters:
             params["filter"] = filters
@@ -105,6 +118,16 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
                 )
             ),
         ],
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -117,7 +140,9 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
 
         Covers any GET on /api/v2/cmdb/{resource}/{key}.
         """
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             return await client.cmdb_get(resource_path, vdom=vdom)
         except FortiOSError as exc:
@@ -146,6 +171,16 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
                 )
             ),
         ],
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -158,7 +193,9 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
 
         Covers any POST on /api/v2/cmdb/{resource_path}.
         """
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             body = json.loads(data)
         except json.JSONDecodeError as exc:
@@ -190,6 +227,16 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
                 )
             ),
         ],
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -202,7 +249,9 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
 
         Covers any PUT on /api/v2/cmdb/{resource_path}/{key}.
         """
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             body = json.loads(data)
         except json.JSONDecodeError as exc:
@@ -225,6 +274,16 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
                 )
             ),
         ],
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -237,7 +296,9 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
 
         Covers any DELETE on /api/v2/cmdb/{resource_path}/{key}.
         """
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             return await client.cmdb_delete(resource_path, vdom=vdom)
         except FortiOSError as exc:
@@ -271,6 +332,16 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
                 ),
             ),
         ] = None,
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -283,7 +354,9 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
 
         Covers any GET on /api/v2/monitor/{monitor_path}.
         """
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         params: dict[str, Any] | None = None
         if extra_params:
             try:
@@ -320,6 +393,16 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
                 ),
             ),
         ] = None,
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -332,7 +415,9 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
 
         Covers any POST on /api/v2/monitor/{monitor_path}.
         """
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         body_dict: dict[str, Any] = {}
         if body:
             try:
@@ -372,6 +457,16 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
                 ),
             ),
         ] = None,
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -384,7 +479,9 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
 
         Covers any GET on /api/v2/log/{log_path}.
         """
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         params: dict[str, Any] | None = None
         if extra_params:
             try:
@@ -429,6 +526,16 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
                 description="Optional JSON body for POST requests.",
             ),
         ] = None,
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -441,7 +548,9 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
 
         Covers all GET/POST on /api/v2/service/{service_path}.
         """
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         if method.upper() == "POST":
             body_dict: dict[str, Any] = {}
             if body:

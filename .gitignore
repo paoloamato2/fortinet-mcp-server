@@ -25,6 +25,7 @@ env/
 # One-off migration / utility scripts
 transform_vdom.py
 fix_vdom.py
+add_instance_param.py
 
 # IDE / editors
 .vscode/
