@@ -140,3 +140,26 @@ async def test_single_instance_config_allows_omitting_instance(
     payload = await _call("cmdb_list", {"resource_path": "firewall/policy"})
 
     assert payload["results"] == []
+
+
+async def test_typed_firewall_tool_also_honours_instance(
+    fleet: None, httpx_mock: HTTPXMock
+) -> None:
+    httpx_mock.add_response(
+        url="https://dc.example/api/v2/cmdb/firewall/policy?vdom=root&start=0&count=200",
+        json={"results": [{"policyid": 9}], "http_status": 200},
+    )
+
+    payload = await _call("firewall_policy_list", {"instance": "dc-edge"})
+
+    assert payload["results"][0]["policyid"] == 9
+    assert httpx_mock.get_requests()[0].url.host == "dc.example"
+
+
+async def test_typed_firewall_tool_reports_ambiguous_omission(
+    fleet: None, httpx_mock: HTTPXMock
+) -> None:
+    payload = await _call("firewall_policy_list", {})
+
+    assert "'instance' is required" in payload["error"]
+    assert httpx_mock.get_requests() == []

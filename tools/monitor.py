@@ -11,7 +11,8 @@ from typing import Annotated, Any
 from mcp.server.fastmcp import FastMCP, Context
 from pydantic import Field
 
-from fortios_client import FortiOSClient, FortiOSError
+from fortios_client import FortiOSError
+from instances import FortiOSAPI
 
 
 def register(mcp: FastMCP) -> None:
@@ -24,6 +25,16 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def monitor_network_arp_list(
         ctx: Context,
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -33,7 +44,9 @@ def register(mcp: FastMCP) -> None:
         ] = None,
     ) -> dict[str, Any]:
         """Get the ARP table (IP-to-MAC address mappings)."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             return await client.monitor_get("network/arp", vdom=vdom)
         except FortiOSError as exc:
@@ -42,6 +55,16 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def monitor_network_lldp_neighbors(
         ctx: Context,
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -51,7 +74,9 @@ def register(mcp: FastMCP) -> None:
         ] = None,
     ) -> dict[str, Any]:
         """Get LLDP neighbor information discovered on all interfaces."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             return await client.monitor_get("network/lldp/neighbors", vdom=vdom)
         except FortiOSError as exc:
@@ -64,6 +89,16 @@ def register(mcp: FastMCP) -> None:
             str | None,
             Field(default=None, description="Interface name to get DHCP status for."),
         ] = None,
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -73,7 +108,9 @@ def register(mcp: FastMCP) -> None:
         ] = None,
     ) -> dict[str, Any]:
         """Get DHCP lease status on an interface (client side)."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         params: dict[str, Any] = {}
         if interface:
             params["interface_name"] = interface
@@ -92,6 +129,16 @@ def register(mcp: FastMCP) -> None:
         count: Annotated[
             int, Field(default=20, description="Number of top entries to return.")
         ] = 20,
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -101,7 +148,9 @@ def register(mcp: FastMCP) -> None:
         ] = None,
     ) -> dict[str, Any]:
         """Get FortiView top sources (most active source IPs by session count)."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             return await client.monitor_get(
                 "fortiview/statistics", {"type": "source", "count": count}, vdom=vdom
@@ -115,6 +164,16 @@ def register(mcp: FastMCP) -> None:
         count: Annotated[
             int, Field(default=20, description="Number of top entries to return.")
         ] = 20,
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -124,7 +183,9 @@ def register(mcp: FastMCP) -> None:
         ] = None,
     ) -> dict[str, Any]:
         """Get FortiView top destinations (most accessed destination IPs)."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             return await client.monitor_get(
                 "fortiview/statistics",
@@ -140,6 +201,16 @@ def register(mcp: FastMCP) -> None:
         count: Annotated[
             int, Field(default=20, description="Number of top entries to return.")
         ] = 20,
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -149,7 +220,9 @@ def register(mcp: FastMCP) -> None:
         ] = None,
     ) -> dict[str, Any]:
         """Get FortiView top applications by bandwidth or session count."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             return await client.monitor_get(
                 "fortiview/statistics",
@@ -162,6 +235,16 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def monitor_fortiview_top_threat_map(
         ctx: Context,
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -171,7 +254,9 @@ def register(mcp: FastMCP) -> None:
         ] = None,
     ) -> dict[str, Any]:
         """Get FortiView threat map data (geo-blocking source countries)."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             return await client.monitor_get(
                 "fortiview/statistics", {"type": "threat"}, vdom=vdom
@@ -186,6 +271,16 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def monitor_license_status(
         ctx: Context,
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -195,7 +290,9 @@ def register(mcp: FastMCP) -> None:
         ] = None,
     ) -> dict[str, Any]:
         """Get FortiGuard license and subscription status for all services."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             return await client.monitor_get("license/status", vdom=vdom)
         except FortiOSError as exc:
@@ -204,6 +301,16 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def monitor_license_forticare_resellers(
         ctx: Context,
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -213,7 +320,9 @@ def register(mcp: FastMCP) -> None:
         ] = None,
     ) -> dict[str, Any]:
         """Get FortiCare reseller and support contract information."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             return await client.monitor_get("license/forticare-resellers", vdom=vdom)
         except FortiOSError as exc:
@@ -226,6 +335,16 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def monitor_endpoint_summary(
         ctx: Context,
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -235,7 +354,9 @@ def register(mcp: FastMCP) -> None:
         ] = None,
     ) -> dict[str, Any]:
         """Get endpoint control (FortiClient) summary statistics."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             return await client.monitor_get("endpoint-control/summary", vdom=vdom)
         except FortiOSError as exc:
@@ -247,6 +368,16 @@ def register(mcp: FastMCP) -> None:
         count: Annotated[
             int, Field(default=100, description="Number of records to return.")
         ] = 100,
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -256,7 +387,9 @@ def register(mcp: FastMCP) -> None:
         ] = None,
     ) -> dict[str, Any]:
         """List registered endpoint (FortiClient) records."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             return await client.monitor_get(
                 "endpoint-control/record-list", {"count": count}, vdom=vdom
@@ -271,6 +404,16 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def monitor_ips_anomaly(
         ctx: Context,
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -280,7 +423,9 @@ def register(mcp: FastMCP) -> None:
         ] = None,
     ) -> dict[str, Any]:
         """Get IPS anomaly detection statistics."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             return await client.monitor_get("ips/anomaly", vdom=vdom)
         except FortiOSError as exc:
@@ -289,6 +434,16 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def monitor_utm_app_categories(
         ctx: Context,
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -298,7 +453,9 @@ def register(mcp: FastMCP) -> None:
         ] = None,
     ) -> dict[str, Any]:
         """Get UTM application category statistics."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             return await client.monitor_get("utm/app-lookup", vdom=vdom)
         except FortiOSError as exc:
@@ -311,6 +468,16 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def monitor_switch_controller_managed_switch(
         ctx: Context,
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -320,7 +487,9 @@ def register(mcp: FastMCP) -> None:
         ] = None,
     ) -> dict[str, Any]:
         """Get status of all FortiSwitch managed switches."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             return await client.monitor_get(
                 "switch-controller/managed-switch", vdom=vdom
@@ -335,6 +504,16 @@ def register(mcp: FastMCP) -> None:
             str | None,
             Field(default=None, description="FortiSwitch serial number to query."),
         ] = None,
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -344,7 +523,9 @@ def register(mcp: FastMCP) -> None:
         ] = None,
     ) -> dict[str, Any]:
         """Get per-port traffic statistics for managed FortiSwitch devices."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         params: dict[str, Any] = {}
         if switch_id:
             params["mkey"] = switch_id
@@ -362,6 +543,16 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def monitor_security_rating_summary(
         ctx: Context,
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -371,7 +562,9 @@ def register(mcp: FastMCP) -> None:
         ] = None,
     ) -> dict[str, Any]:
         """Get the Security Rating summary score and findings."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             return await client.monitor_get("system/security-rating", vdom=vdom)
         except FortiOSError as exc:
@@ -388,6 +581,16 @@ def register(mcp: FastMCP) -> None:
             str,
             Field(default="global", description="Backup scope: global or vdom."),
         ] = "global",
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -397,7 +600,9 @@ def register(mcp: FastMCP) -> None:
         ] = None,
     ) -> dict[str, Any]:
         """Trigger a configuration backup and get the backup data (base64-encoded)."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         params: dict[str, Any] = {"scope": scope}
         if vdom:
             params["vdom"] = vdom
@@ -413,6 +618,16 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def monitor_system_process_list(
         ctx: Context,
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -422,7 +637,9 @@ def register(mcp: FastMCP) -> None:
         ] = None,
     ) -> dict[str, Any]:
         """List running FortiOS processes with CPU and memory usage."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             return await client.monitor_get("system/running-processes", vdom=vdom)
         except FortiOSError as exc:
@@ -442,6 +659,16 @@ def register(mcp: FastMCP) -> None:
                 description="Interface name. If not specified, returns all interfaces.",
             ),
         ] = None,
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -451,7 +678,9 @@ def register(mcp: FastMCP) -> None:
         ] = None,
     ) -> dict[str, Any]:
         """Get real-time interface traffic statistics (bytes in/out, errors, drops)."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         params: dict[str, Any] = {}
         if interface:
             params["interface_name"] = interface
@@ -482,6 +711,16 @@ def register(mcp: FastMCP) -> None:
         count: Annotated[
             int, Field(default=5, description="Number of ICMP pings to send.")
         ] = 5,
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -491,7 +730,9 @@ def register(mcp: FastMCP) -> None:
         ] = None,
     ) -> dict[str, Any]:
         """Ping a remote host from the FortiGate device."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         params: dict[str, Any] = {"destination": destination, "count": count}
         if source_ip:
             params["source"] = source_ip
@@ -512,6 +753,16 @@ def register(mcp: FastMCP) -> None:
         ip_address: Annotated[
             str, Field(description="IPv4 address to look up geolocation for.")
         ],
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -521,7 +772,9 @@ def register(mcp: FastMCP) -> None:
         ] = None,
     ) -> dict[str, Any]:
         """Look up the geographic location (country, coordinates) of an IP address."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             return await client.monitor_get(
                 "geoip/geoip-query", {"ip_addr": ip_address}, vdom=vdom

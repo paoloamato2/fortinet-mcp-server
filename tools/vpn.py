@@ -14,7 +14,8 @@ from typing import Annotated, Any
 from mcp.server.fastmcp import FastMCP, Context
 from pydantic import Field
 
-from fortios_client import FortiOSClient, FortiOSError
+from fortios_client import FortiOSError
+from instances import FortiOSAPI
 
 
 def register(mcp: FastMCP) -> None:
@@ -27,6 +28,16 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def vpn_ipsec_phase1_list(
         ctx: Context,
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -36,7 +47,9 @@ def register(mcp: FastMCP) -> None:
         ] = None,
     ) -> dict[str, Any]:
         """List all IPsec VPN Phase 1 (IKE gateway) interfaces."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             return await client.cmdb_get("vpn.ipsec/phase1-interface", vdom=vdom)
         except FortiOSError as exc:
@@ -46,6 +59,16 @@ def register(mcp: FastMCP) -> None:
     async def vpn_ipsec_phase1_get(
         ctx: Context,
         name: Annotated[str, Field(description="Phase 1 tunnel name.")],
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -55,7 +78,9 @@ def register(mcp: FastMCP) -> None:
         ] = None,
     ) -> dict[str, Any]:
         """Get a specific IPsec Phase 1 interface configuration."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             return await client.cmdb_get(
                 f"vpn.ipsec/phase1-interface/{name}", vdom=vdom
@@ -101,6 +126,16 @@ def register(mcp: FastMCP) -> None:
                 description="Use VPN gateway as network device: enable or disable.",
             ),
         ] = "disable",
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -110,7 +145,9 @@ def register(mcp: FastMCP) -> None:
         ] = None,
     ) -> dict[str, Any]:
         """Create a new IPsec VPN Phase 1 interface (IKEv1/IKEv2 gateway)."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         body: dict[str, Any] = {
             "name": name,
             "remote-gw": remote_gw,
@@ -146,6 +183,16 @@ def register(mcp: FastMCP) -> None:
         comments: Annotated[
             str | None, Field(default=None, description="New comment.")
         ] = None,
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -155,7 +202,9 @@ def register(mcp: FastMCP) -> None:
         ] = None,
     ) -> dict[str, Any]:
         """Update an existing IPsec Phase 1 interface."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         body: dict[str, Any] = {}
         if remote_gw is not None:
             body["remote-gw"] = remote_gw
@@ -178,6 +227,16 @@ def register(mcp: FastMCP) -> None:
     async def vpn_ipsec_phase1_delete(
         ctx: Context,
         name: Annotated[str, Field(description="Phase 1 tunnel name to delete.")],
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -187,7 +246,9 @@ def register(mcp: FastMCP) -> None:
         ] = None,
     ) -> dict[str, Any]:
         """Delete an IPsec Phase 1 tunnel interface."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             return await client.cmdb_delete(
                 f"vpn.ipsec/phase1-interface/{name}", vdom=vdom
@@ -202,6 +263,16 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def vpn_ipsec_phase2_list(
         ctx: Context,
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -211,7 +282,9 @@ def register(mcp: FastMCP) -> None:
         ] = None,
     ) -> dict[str, Any]:
         """List all IPsec VPN Phase 2 (SA / child SA) selectors."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             return await client.cmdb_get("vpn.ipsec/phase2-interface", vdom=vdom)
         except FortiOSError as exc:
@@ -221,6 +294,16 @@ def register(mcp: FastMCP) -> None:
     async def vpn_ipsec_phase2_get(
         ctx: Context,
         name: Annotated[str, Field(description="Phase 2 selector name.")],
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -230,7 +313,9 @@ def register(mcp: FastMCP) -> None:
         ] = None,
     ) -> dict[str, Any]:
         """Get a specific IPsec Phase 2 selector configuration."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             return await client.cmdb_get(
                 f"vpn.ipsec/phase2-interface/{name}", vdom=vdom
@@ -279,6 +364,16 @@ def register(mcp: FastMCP) -> None:
         comments: Annotated[
             str | None, Field(default=None, description="Comment.")
         ] = None,
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -288,7 +383,9 @@ def register(mcp: FastMCP) -> None:
         ] = None,
     ) -> dict[str, Any]:
         """Create a new IPsec VPN Phase 2 selector."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         body: dict[str, Any] = {
             "name": name,
             "phase1name": phase1_name,
@@ -319,6 +416,16 @@ def register(mcp: FastMCP) -> None:
     async def vpn_ipsec_phase2_delete(
         ctx: Context,
         name: Annotated[str, Field(description="Phase 2 selector name to delete.")],
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -328,7 +435,9 @@ def register(mcp: FastMCP) -> None:
         ] = None,
     ) -> dict[str, Any]:
         """Delete an IPsec Phase 2 selector."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             return await client.cmdb_delete(
                 f"vpn.ipsec/phase2-interface/{name}", vdom=vdom
@@ -343,6 +452,16 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def vpn_ssl_settings_get(
         ctx: Context,
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -352,7 +471,9 @@ def register(mcp: FastMCP) -> None:
         ] = None,
     ) -> dict[str, Any]:
         """Get SSL VPN global settings (port, certificates, idle timeout, etc.)."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             return await client.cmdb_get("vpn.ssl/settings", vdom=vdom)
         except FortiOSError as exc:
@@ -383,6 +504,16 @@ def register(mcp: FastMCP) -> None:
             int | None,
             Field(default=None, description="Max login failures before lockout."),
         ] = None,
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -392,7 +523,9 @@ def register(mcp: FastMCP) -> None:
         ] = None,
     ) -> dict[str, Any]:
         """Update SSL VPN global settings."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         body: dict[str, Any] = {}
         if status is not None:
             body["status"] = status
@@ -414,6 +547,16 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def vpn_ssl_portal_list(
         ctx: Context,
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -423,7 +566,9 @@ def register(mcp: FastMCP) -> None:
         ] = None,
     ) -> dict[str, Any]:
         """List all SSL VPN portals."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             return await client.cmdb_get("vpn.ssl.web/portal", vdom=vdom)
         except FortiOSError as exc:
@@ -433,6 +578,16 @@ def register(mcp: FastMCP) -> None:
     async def vpn_ssl_portal_get(
         ctx: Context,
         name: Annotated[str, Field(description="SSL VPN portal name.")],
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -442,7 +597,9 @@ def register(mcp: FastMCP) -> None:
         ] = None,
     ) -> dict[str, Any]:
         """Get a specific SSL VPN portal configuration."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             return await client.cmdb_get(f"vpn.ssl.web/portal/{name}", vdom=vdom)
         except FortiOSError as exc:
@@ -482,6 +639,16 @@ def register(mcp: FastMCP) -> None:
         heading: Annotated[
             str | None, Field(default=None, description="Portal heading/title.")
         ] = None,
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -491,7 +658,9 @@ def register(mcp: FastMCP) -> None:
         ] = None,
     ) -> dict[str, Any]:
         """Create a new SSL VPN portal."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         body: dict[str, Any] = {
             "name": name,
             "tunnel-mode": tunnel_mode,
@@ -513,6 +682,16 @@ def register(mcp: FastMCP) -> None:
     async def vpn_ssl_portal_delete(
         ctx: Context,
         name: Annotated[str, Field(description="SSL VPN portal name to delete.")],
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -522,7 +701,9 @@ def register(mcp: FastMCP) -> None:
         ] = None,
     ) -> dict[str, Any]:
         """Delete an SSL VPN portal."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             return await client.cmdb_delete(f"vpn.ssl.web/portal/{name}", vdom=vdom)
         except FortiOSError as exc:
@@ -531,6 +712,16 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def vpn_ssl_web_host_check_software_list(
         ctx: Context,
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -540,7 +731,9 @@ def register(mcp: FastMCP) -> None:
         ] = None,
     ) -> dict[str, Any]:
         """List SSL VPN host check software (endpoint compliance) rules."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             return await client.cmdb_get("vpn.ssl.web/host-check-software", vdom=vdom)
         except FortiOSError as exc:
@@ -553,6 +746,16 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def vpn_certificate_ca_list(
         ctx: Context,
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -562,7 +765,9 @@ def register(mcp: FastMCP) -> None:
         ] = None,
     ) -> dict[str, Any]:
         """List all VPN CA certificates."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             return await client.cmdb_get("vpn.certificate/ca", vdom=vdom)
         except FortiOSError as exc:
@@ -571,6 +776,16 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def vpn_certificate_local_list(
         ctx: Context,
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -580,7 +795,9 @@ def register(mcp: FastMCP) -> None:
         ] = None,
     ) -> dict[str, Any]:
         """List all VPN local (device) certificates."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             return await client.cmdb_get("vpn.certificate/local", vdom=vdom)
         except FortiOSError as exc:
@@ -589,6 +806,16 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def vpn_certificate_remote_list(
         ctx: Context,
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -598,7 +825,9 @@ def register(mcp: FastMCP) -> None:
         ] = None,
     ) -> dict[str, Any]:
         """List all remote (peer) VPN certificates."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             return await client.cmdb_get("vpn.certificate/remote", vdom=vdom)
         except FortiOSError as exc:
@@ -607,6 +836,16 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def vpn_certificate_ocsp_server_list(
         ctx: Context,
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -616,7 +855,9 @@ def register(mcp: FastMCP) -> None:
         ] = None,
     ) -> dict[str, Any]:
         """List OCSP server configurations for certificate revocation checking."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             return await client.cmdb_get("vpn.certificate/ocsp-server", vdom=vdom)
         except FortiOSError as exc:
@@ -629,6 +870,16 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def monitor_vpn_ipsec(
         ctx: Context,
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -638,7 +889,9 @@ def register(mcp: FastMCP) -> None:
         ] = None,
     ) -> dict[str, Any]:
         """Get status of all IPsec VPN tunnels (up/down, bytes transferred, SAs)."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             return await client.monitor_get("vpn/ipsec", vdom=vdom)
         except FortiOSError as exc:
@@ -650,6 +903,16 @@ def register(mcp: FastMCP) -> None:
         tunnel_name: Annotated[
             str, Field(description="IPsec tunnel (Phase 1) name to bring up.")
         ],
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -659,7 +922,9 @@ def register(mcp: FastMCP) -> None:
         ] = None,
     ) -> dict[str, Any]:
         """Bring up (activate) an IPsec VPN tunnel."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             return await client.monitor_post(
                 "vpn/ipsec/tunnel_up", {"mkey": tunnel_name}, vdom=vdom
@@ -673,6 +938,16 @@ def register(mcp: FastMCP) -> None:
         tunnel_name: Annotated[
             str, Field(description="IPsec tunnel name to bring down.")
         ],
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -682,7 +957,9 @@ def register(mcp: FastMCP) -> None:
         ] = None,
     ) -> dict[str, Any]:
         """Bring down (deactivate) an IPsec VPN tunnel."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             return await client.monitor_post(
                 "vpn/ipsec/tunnel_down", {"mkey": tunnel_name}, vdom=vdom
@@ -693,6 +970,16 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def monitor_vpn_ssl_list(
         ctx: Context,
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -702,7 +989,9 @@ def register(mcp: FastMCP) -> None:
         ] = None,
     ) -> dict[str, Any]:
         """List active SSL VPN sessions."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             return await client.monitor_get("vpn/ssl", vdom=vdom)
         except FortiOSError as exc:
@@ -719,6 +1008,16 @@ def register(mcp: FastMCP) -> None:
                 description="Session index (use if multiple sessions for same user).",
             ),
         ] = None,
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -728,7 +1027,9 @@ def register(mcp: FastMCP) -> None:
         ] = None,
     ) -> dict[str, Any]:
         """Terminate (disconnect) an active SSL VPN user session."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         body: dict[str, Any] = {"username": username}
         if index is not None:
             body["index"] = index
@@ -740,6 +1041,16 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def monitor_vpn_certificate_valid(
         ctx: Context,
+        instance: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Target FortiGate name; see fortigate_list. "
+                    "Omit if only one is configured. '*' = all (reads only)."
+                ),
+            ),
+        ] = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -749,7 +1060,9 @@ def register(mcp: FastMCP) -> None:
         ] = None,
     ) -> dict[str, Any]:
         """Check validity status of all VPN-related certificates."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             return await client.monitor_get("vpn-certificate/cert", vdom=vdom)
         except FortiOSError as exc:

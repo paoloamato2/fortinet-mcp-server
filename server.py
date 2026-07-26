@@ -101,12 +101,7 @@ async def lifespan(server: FastMCP) -> AsyncGenerator[dict, None]:
         for client in registry.clients.values():
             await stack.enter_async_context(client)
         logger.info("%d FortiGate client(s) initialized.", len(instances))
-        yield {
-            "registry": registry,
-            # Transitional: keeps not-yet-migrated tools working. Removed in
-            # the commit that migrates the last tool module.
-            "client": next(iter(registry.clients.values())),
-        }
+        yield {"registry": registry}
     logger.info("FortiGate clients closed.")
 
 

@@ -46,8 +46,6 @@ async def test_lifespan_yields_a_registry_with_every_instance(
         assert isinstance(registry, InstanceRegistry)
         assert registry.names() == ["hq-fw", "dc-edge"]
         assert registry.clients["hq-fw"].read_only is True
-        # Transitional key kept until the tools are migrated (Task 8).
-        assert ctx["client"] is registry.clients["hq-fw"]
 
 
 async def test_lifespan_raises_on_invalid_configuration(
