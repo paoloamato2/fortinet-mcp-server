@@ -48,12 +48,16 @@ class FortiOSClient:
         vdom: str = "root",
         verify_ssl: bool = False,
         timeout: float = 30.0,
+        name: str = "default",
+        read_only: bool = False,
     ) -> None:
         self.host = host.rstrip("/")
         self.api_token = api_token
         self.vdom = vdom
         self.verify_ssl = verify_ssl
         self.timeout = timeout
+        self.name = name
+        self.read_only = read_only
         self._client: httpx.AsyncClient | None = None
 
     # ------------------------------------------------------------------
@@ -92,6 +96,15 @@ class FortiOSClient:
                 "FortiOSClient must be used as an async context manager."
             )
         return self._client
+
+    def _write_guard(self) -> None:
+        """Refuse write operations on an instance configured read-only."""
+        if self.read_only:
+            raise FortiOSError(
+                f"Instance '{self.name}' is configured read-only; "
+                f"write operations are refused.",
+                403,
+            )
 
     def _vdom_params(
         self, extra: dict[str, Any] | None = None, vdom: str | None = None
@@ -146,6 +159,7 @@ class FortiOSClient:
         vdom: str | None = None,
     ) -> dict[str, Any]:
         """POST /api/v2/cmdb/{path} — create a configuration object."""
+        self._write_guard()
         client = self._client_guard()
         url = f"{self._BASE}/cmdb/{path.lstrip('/')}"
         resp = await client.post(url, json=body, params=self._vdom_params(params, vdom))
@@ -159,6 +173,7 @@ class FortiOSClient:
         vdom: str | None = None,
     ) -> dict[str, Any]:
         """PUT /api/v2/cmdb/{path} — replace a configuration object."""
+        self._write_guard()
         client = self._client_guard()
         url = f"{self._BASE}/cmdb/{path.lstrip('/')}"
         resp = await client.put(url, json=body, params=self._vdom_params(params, vdom))
@@ -171,6 +186,7 @@ class FortiOSClient:
         vdom: str | None = None,
     ) -> dict[str, Any]:
         """DELETE /api/v2/cmdb/{path} — remove a configuration object."""
+        self._write_guard()
         client = self._client_guard()
         url = f"{self._BASE}/cmdb/{path.lstrip('/')}"
         resp = await client.delete(url, params=self._vdom_params(params, vdom))
@@ -200,6 +216,7 @@ class FortiOSClient:
         vdom: str | None = None,
     ) -> dict[str, Any]:
         """POST /api/v2/monitor/{path} — trigger a monitor action."""
+        self._write_guard()
         client = self._client_guard()
         url = f"{self._BASE}/monitor/{path.lstrip('/')}"
         resp = await client.post(
@@ -231,6 +248,7 @@ class FortiOSClient:
         vdom: str | None = None,
     ) -> dict[str, Any]:
         """POST /api/v2/log/{path} — start a log search or action."""
+        self._write_guard()
         client = self._client_guard()
         url = f"{self._BASE}/log/{path.lstrip('/')}"
         resp = await client.post(
@@ -262,6 +280,7 @@ class FortiOSClient:
         vdom: str | None = None,
     ) -> dict[str, Any]:
         """POST /api/v2/service/{path}."""
+        self._write_guard()
         client = self._client_guard()
         url = f"{self._BASE}/service/{path.lstrip('/')}"
         resp = await client.post(
