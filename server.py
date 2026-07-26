@@ -42,6 +42,7 @@ from tools import (
     log,
     security,
     wireless,
+    fleet,
 )
 
 # Load .env if present
@@ -156,8 +157,9 @@ monitor.register(mcp)
 log.register(mcp)
 security.register(mcp)
 wireless.register(mcp)
+fleet.register(mcp)
 
-logger.info("All 10 tool modules registered (204+ tools).")
+logger.info("All 11 tool modules registered (205+ tools).")
 
 
 # ─────────────────────────────────────────────────────────────────────
