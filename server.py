@@ -117,9 +117,12 @@ mcp = FastMCP(
     host=os.environ.get("MCP_HOST", "127.0.0.1"),
     port=int(os.environ.get("MCP_PORT", "8000")),
     instructions=(
-        "You are connected to one or more Fortinet FortiGates running "
-        "FortiOS 7.6.6. "
-        "This server exposes the complete FortiOS REST API as MCP tools. "
+        "You are connected to one or more Fortinet FortiGates. "
+        "This server exposes the complete FortiOS REST API as MCP tools; it is "
+        "built against the FortiOS 7.6 API, and the devices it manages may run "
+        "different firmware versions. Never assume a version — read the running "
+        "one with system_status, or fortigate_list(check_health=True) for the "
+        "whole fleet. "
         "\n\n" + roster_text(_IMPORT_INSTANCES) + "\n\n"
         "Tool categories:\n"
         "- **Generic**: cmdb_list/get/create/update/delete, monitor_get/action, log_get, service_call\n"

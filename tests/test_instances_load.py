@@ -487,6 +487,104 @@ def test_absent_optional_keys_still_inherit_fleet_defaults(
     assert instances[0].read_only is False
 
 
+@pytest.mark.parametrize(
+    ("entry", "expected_fragment"),
+    [
+        ({"api_token": 12345}, "'api_token' must be a string, got int"),
+        ({"api_token": True}, "'api_token' must be a string, got bool"),
+        ({"api_token": None}, "'api_token' must be a string, got NoneType"),
+        ({"api_token": {"value": "t"}}, "'api_token' must be a string, got dict"),
+        ({"api_token": ""}, "'api_token' must not be empty"),
+        ({"api_token": "   "}, "'api_token' must not be empty"),
+        ({"api_token_env": 42}, "'api_token_env' must be a string, got int"),
+        ({"api_token_env": None}, "'api_token_env' must be a string, got NoneType"),
+        ({"api_token_env": ""}, "'api_token_env' must not be empty"),
+    ],
+)
+def test_mistyped_or_blank_credentials_fail_closed(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    entry: dict[str, object],
+    expected_fragment: str,
+) -> None:
+    """A credential field must be a non-empty string or the instance is dropped.
+
+    Truthiness-based validation used to accept `{"api_token": 12345}` by
+    coercing it with `str()` — a mis-typed JSON value silently became the
+    bearer token — and reported `{"api_token": ""}` as "set exactly one of",
+    which points at the wrong problem. Presence is now key membership and the
+    supplied field must be a non-empty string.
+    """
+    path = _write(
+        tmp_path,
+        [{"name": "a", "description": "d", "host": "https://a", **entry}],
+    )
+    monkeypatch.setenv("FORTIOS_INSTANCES_FILE", path)
+
+    instances, errors = load_instances()
+
+    assert instances == []
+    assert any(expected_fragment in e for e in errors), errors
+
+
+def test_credential_errors_never_echo_the_supplied_value(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Rejecting a mis-typed `api_token` must not print it.
+
+    Other field errors quote the offending value (`'vdom' is not a string:
+    None`), which would put a real token into the log line the operator pastes
+    into a bug report. The credential path reports the *type* instead.
+    """
+    path = _write(
+        tmp_path,
+        [
+            {
+                "name": "a",
+                "description": "d",
+                "host": "https://a",
+                "api_token": ["super-secret-token"],
+            }
+        ],
+    )
+    monkeypatch.setenv("FORTIOS_INSTANCES_FILE", path)
+
+    instances, errors = load_instances()
+
+    assert instances == []
+    assert any("'api_token' must be a string, got list" in e for e in errors), errors
+    assert not any("super-secret-token" in e for e in errors), errors
+
+
+def test_null_api_token_alongside_api_token_env_is_rejected(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Both keys present is "set exactly one", even when one of them is null.
+
+    Under truthiness this fell through to `api_token_env`; an explicit null
+    next to a real credential source is an ambiguous config, so it fails.
+    """
+    monkeypatch.setenv("MY_FW_TOKEN", "resolved-token")
+    path = _write(
+        tmp_path,
+        [
+            {
+                "name": "a",
+                "description": "d",
+                "host": "https://a",
+                "api_token": None,
+                "api_token_env": "MY_FW_TOKEN",
+            }
+        ],
+    )
+    monkeypatch.setenv("FORTIOS_INSTANCES_FILE", path)
+
+    instances, errors = load_instances()
+
+    assert instances == []
+    assert any("exactly one of" in e for e in errors), errors
+
+
 def test_repr_never_includes_the_api_token() -> None:
     """Finding 2: the dataclass repr must not leak `api_token`."""
     cfg = InstanceConfig(

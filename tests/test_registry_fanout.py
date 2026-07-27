@@ -127,6 +127,10 @@ async def test_fan_out_refuses_writes_without_issuing_a_request(
             await getattr(registry.resolve("*"), method)(*args)
 
     assert "read-only" in str(excinfo.value)
+    # 403 — the same code FortiOSClient uses for a read-only instance. Both are
+    # "refused by policy"; a caller must be able to tell that from the 0 that
+    # marks a network or otherwise unknown failure.
+    assert excinfo.value.status_code == 403
     assert httpx_mock.get_requests() == []
 
 

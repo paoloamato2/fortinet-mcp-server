@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -80,6 +81,19 @@ def test_instructions_mention_the_instance_parameter() -> None:
     instructions = server.mcp.instructions or ""
 
     assert "instance" in instructions
+
+
+def test_instructions_do_not_assert_an_unchecked_firmware_version() -> None:
+    """The instructions are shown to the LLM as fact, and nothing in this
+    server enforces or detects the firmware a device runs — a fleet can be
+    mixed. Asserting a concrete version there ("running FortiOS 7.6.6") tells
+    the model something that may be false, so no full version literal may
+    appear; the guidance points at system_status instead.
+    """
+    instructions = server.mcp.instructions or ""
+
+    assert not re.search(r"\d+\.\d+\.\d+", instructions), instructions
+    assert "system_status" in instructions
 
 
 def test_reloading_under_a_populated_fleet_renders_the_roster(

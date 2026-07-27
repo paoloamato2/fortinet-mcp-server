@@ -86,6 +86,27 @@ def _required_string(
     return value
 
 
+def _credential_string(
+    raw: dict[str, Any], key: str, where: str, errors: list[str]
+) -> str | None:
+    """Return the stripped string at ``key``, or ``None`` with an error recorded.
+
+    Like :func:`_required_string` but for the credential fields, and with two
+    differences that matter there: the caller has already established the key
+    is present (so absence is not a case here), and the recorded error never
+    echoes the value — for ``api_token`` that value is a secret.
+    """
+    value = raw[key]
+    if not isinstance(value, str):
+        errors.append(f"{where}: '{key}' must be a string, got {type(value).__name__}")
+        return None
+    value = value.strip()
+    if not value:
+        errors.append(f"{where}: '{key}' must not be empty")
+        return None
+    return value
+
+
 def _optional_bool(
     raw: dict[str, Any], key: str, default: bool, where: str, errors: list[str]
 ) -> bool | None:
@@ -137,24 +158,29 @@ def _parse_instance(
     if host is None:
         return None
 
-    inline_token = raw.get("api_token")
-    token_env = raw.get("api_token_env")
-    if bool(inline_token) == bool(token_env):
+    # Which credential field was *supplied* is decided by key membership, not
+    # truthiness: `{"api_token": ""}` is a supplied-but-empty token (a precise
+    # error) rather than a missing one, and a mis-typed `{"api_token": 1234}`
+    # must fail closed instead of being coerced into a credential by `str()`.
+    if ("api_token" in raw) == ("api_token_env" in raw):
         errors.append(f"{where}: set exactly one of 'api_token' or 'api_token_env'")
         return None
-    if token_env:
-        api_token = os.environ.get(str(token_env), "").strip()
+    if "api_token_env" in raw:
+        token_env = _credential_string(raw, "api_token_env", where, errors)
+        if token_env is None:
+            return None
+        api_token = os.environ.get(token_env, "").strip()
         if not api_token:
             errors.append(
-                f"{where}: environment variable {str(token_env)!r} named by "
+                f"{where}: environment variable {token_env!r} named by "
                 f"'api_token_env' is unset or empty"
             )
             return None
     else:
-        api_token = str(inline_token).strip()
-        if not api_token:
-            errors.append(f"{where}: 'api_token' is empty")
+        inline_token = _credential_string(raw, "api_token", where, errors)
+        if inline_token is None:
             return None
+        api_token = inline_token
 
     timeout = float(defaults["timeout"])
     if "timeout" in raw:
@@ -513,10 +539,13 @@ class FanOutClient:
         return merged
 
     def _refuse(self) -> dict[str, Any]:
+        # 403, matching FortiOSClient._write_guard: both are "refused by
+        # policy", and a caller reading `status_code` should not have to tell
+        # the two refusals apart from a network or unknown failure (0).
         raise FortiOSError(
             "instance='*' fan-out is read-only. "
             "Target a single instance for write operations.",
-            0,
+            403,
         )
 
     async def cmdb_get(

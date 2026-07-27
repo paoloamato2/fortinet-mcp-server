@@ -210,7 +210,7 @@ Point `FORTIOS_INSTANCES_FILE` at a JSON array (see
 | `name` | yes | — `[A-Za-z0-9._-]`, 1–64 chars; `*` is reserved |
 | `description` | yes | — shown to the LLM so it can pick the right device |
 | `host` | yes | — |
-| `api_token` or `api_token_env` | exactly one | — `api_token_env` names an env var holding the token |
+| `api_token` or `api_token_env` | exactly one key present | — `api_token_env` names an env var holding the token; either field must be a non-empty string |
 | `vdom` | no | `FORTIOS_VDOM`, else `root` |
 | `verify_ssl` | no | `FORTIOS_VERIFY_SSL`, else `false` |
 | `timeout` | no | `FORTIOS_TIMEOUT`, else `30` |
@@ -248,7 +248,9 @@ on the HTTP method a tool calls (any `cmdb_post`/`cmdb_put`/`cmdb_delete`/`monit
 `log_post`/`service_post`), not on whether that call changes anything — so `instance="*"`
 and a `read_only: true` instance both refuse `monitor_network_ping` even though its tool
 annotation is `READ_ONLY` (it POSTs an ICMP probe but changes nothing on the device). See
-`tool_annotations.py` for that classification and its rationale.
+`tool_annotations.py` for that classification and its rationale. Both refusals report
+`status_code: 403`, distinguishing "refused by policy" from the `0` used for network or
+otherwise unknown failures.
 
 ### Backward compatibility
 
