@@ -38,8 +38,10 @@ consequences worth stating outright:
 from mcp.types import ToolAnnotations
 
 #: Reads a FortiGate and changes nothing on it. The default for this
-#: server: 183 of 241 tools, every ``*_list``/``*_get``/``*_status``, all
-#: 16 ``log_*`` tools, ``monitor_system_config_backup``,
+#: server: 183 of 241 tools, every ``*_list``/``*_get``/``*_status``, the
+#: log-retrieval tools (all GETs) -- 17 of the 18 tools named ``log_*``; the
+#: one that writes is ``log_fortianalyzer_setting_update``, classified
+#: ``DESTRUCTIVE`` below -- ``monitor_system_config_backup``,
 #: ``monitor_network_ping`` and ``fortigate_list``.
 READ_ONLY = ToolAnnotations(
     readOnlyHint=True,
@@ -98,7 +100,11 @@ UNCONSTRAINED = ToolAnnotations(
 
 #: Every approved category, by name. The annotation contract test asserts
 #: each registered tool's annotations equal one of these, so a new tool
-#: cannot introduce an unreviewed hint combination by hand.
+#: cannot introduce an unreviewed hint combination by hand. Exactly five
+#: entries -- adding a sixth needs a reviewed design change (a new,
+#: pairwise-distinct hint combination *and* at least one registered tool
+#: that carries it), not just a new constant; ``tests/test_tool_annotations.py``
+#: pins both the count and that every category has a member.
 CATEGORIES: dict[str, ToolAnnotations] = {
     "READ_ONLY": READ_ONLY,
     "CREATES": CREATES,
