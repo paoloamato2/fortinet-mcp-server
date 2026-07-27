@@ -47,6 +47,10 @@
 - Configurable SSL verification (self-signed certificates supported)
 - Compatible with **multi-VDOM** environments
 - Runs as **stdio** (Claude Desktop) or **HTTP** server (remote/cloud use)
+- **Every tool advertises MCP `ToolAnnotations`** (`readOnlyHint`, `destructiveHint`,
+  `idempotentHint`, `openWorldHint`) so a gating client can auto-approve reads and still
+  confirm writes: 183 of the 241 tools advertise read-only, 58 advertise a write. See
+  `tool_annotations.py`.
 
 ---
 
@@ -239,7 +243,12 @@ delete, and monitor/log/service actions) against that device before any request
 is sent. Reads, including `instance="*"` fan-out, still work. Use it to expose
 production firewalls safely.
 
-`instance="*"` is reads-only in all cases; write tools reject it.
+`instance="*"` is read-only in all cases; write tools reject it. Both refusals are keyed
+on the HTTP method a tool calls (any `cmdb_post`/`cmdb_put`/`cmdb_delete`/`monitor_post`/
+`log_post`/`service_post`), not on whether that call changes anything — so `instance="*"`
+and a `read_only: true` instance both refuse `monitor_network_ping` even though its tool
+annotation is `READ_ONLY` (it POSTs an ICMP probe but changes nothing on the device). See
+`tool_annotations.py` for that classification and its rationale.
 
 ### Backward compatibility
 
@@ -294,6 +303,7 @@ fortinet-mcp-server/
 ├── server.py              # FastMCP entry point, lifespan, tool registration
 ├── fortios_client.py      # Async HTTP client (CMDB/Monitor/Log/Service)
 ├── instances.py           # Fleet configuration loading and the instance registry
+├── tool_annotations.py    # ToolAnnotations categories (read-only vs. write hints)
 ├── pyproject.toml         # Project metadata and dependencies
 ├── .env.example           # Environment variable template
 ├── README.md              # This file
@@ -317,6 +327,7 @@ fortinet-mcp-server/
 ## Security Notes
 
 - The API token grants the same access level as its associated admin profile. Follow the **principle of least privilege** — create a restricted profile if you only need read access.
+- **Tool annotations are advisory, not a security boundary.** Every tool's `readOnlyHint`/`destructiveHint`/etc. describe what a call will do so an MCP client can decide what to auto-approve, but the server enforces nothing based on them — the actual guardrails are the API token's admin profile and per-instance `read_only: true`. Also note `readOnlyHint=true` covers stored config and live session state, not response *sensitivity*: `monitor_system_config_backup` and a few other readers return secrets in an otherwise-unremarkable read.
 - Set `FORTIOS_VERIFY_SSL=true` in production and ensure your FortiGate has a valid TLS certificate.
 - The server runs **locally over stdio** by default — it is not exposed over the network unless HTTP mode is enabled.
 - **Never commit your `.env` file or expose your API token** in logs, issues, or code.
