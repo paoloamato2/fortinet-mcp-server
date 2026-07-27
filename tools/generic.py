@@ -15,6 +15,7 @@ from pydantic import Field
 
 from fortios_client import FortiOSError
 from instances import FortiOSAPI
+from tool_annotations import CREATES, DESTRUCTIVE, READ_ONLY, UNCONSTRAINED
 
 
 def register(mcp: FastMCP) -> None:  # noqa: C901
@@ -24,7 +25,7 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
     # CMDB generic tools  (/api/v2/cmdb/…)
     # ------------------------------------------------------------------
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def cmdb_list(
         ctx: Context,
         resource_path: Annotated[
@@ -105,7 +106,7 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
             await ctx.error(f"cmdb_list error: {exc}")
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def cmdb_get(
         ctx: Context,
         resource_path: Annotated[
@@ -149,7 +150,7 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
             await ctx.error(f"cmdb_get error: {exc}")
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=CREATES)
     async def cmdb_create(
         ctx: Context,
         resource_path: Annotated[
@@ -206,7 +207,7 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
             await ctx.error(f"cmdb_create error: {exc}")
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=DESTRUCTIVE)
     async def cmdb_update(
         ctx: Context,
         resource_path: Annotated[
@@ -262,7 +263,7 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
             await ctx.error(f"cmdb_update error: {exc}")
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=DESTRUCTIVE)
     async def cmdb_delete(
         ctx: Context,
         resource_path: Annotated[
@@ -309,7 +310,7 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
     # Monitor generic tools  (/api/v2/monitor/…)
     # ------------------------------------------------------------------
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_get(
         ctx: Context,
         monitor_path: Annotated[
@@ -369,7 +370,7 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
             await ctx.error(f"monitor_get error: {exc}")
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=UNCONSTRAINED)
     async def monitor_action(
         ctx: Context,
         monitor_path: Annotated[
@@ -434,7 +435,7 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
     # Log generic tool  (/api/v2/log/…)
     # ------------------------------------------------------------------
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def log_get(
         ctx: Context,
         log_path: Annotated[
@@ -498,7 +499,7 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
     # Service generic tool  (/api/v2/service/…)
     # ------------------------------------------------------------------
 
-    @mcp.tool()
+    @mcp.tool(annotations=UNCONSTRAINED)
     async def service_call(
         ctx: Context,
         service_path: Annotated[

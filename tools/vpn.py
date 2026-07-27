@@ -16,6 +16,7 @@ from pydantic import Field
 
 from fortios_client import FortiOSError
 from instances import FortiOSAPI
+from tool_annotations import CREATES, DESTRUCTIVE, READ_ONLY, UPDATES
 
 
 def register(mcp: FastMCP) -> None:
@@ -25,7 +26,7 @@ def register(mcp: FastMCP) -> None:
     # IPsec VPN — Phase 1 (Interface mode)
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def vpn_ipsec_phase1_list(
         ctx: Context,
         instance: Annotated[
@@ -55,7 +56,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def vpn_ipsec_phase1_get(
         ctx: Context,
         name: Annotated[str, Field(description="Phase 1 tunnel name.")],
@@ -88,7 +89,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=CREATES)
     async def vpn_ipsec_phase1_create(
         ctx: Context,
         name: Annotated[str, Field(description="Tunnel name (unique identifier).")],
@@ -167,7 +168,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=DESTRUCTIVE)
     async def vpn_ipsec_phase1_update(
         ctx: Context,
         name: Annotated[str, Field(description="Tunnel name to update.")],
@@ -223,7 +224,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=DESTRUCTIVE)
     async def vpn_ipsec_phase1_delete(
         ctx: Context,
         name: Annotated[str, Field(description="Phase 1 tunnel name to delete.")],
@@ -260,7 +261,7 @@ def register(mcp: FastMCP) -> None:
     # IPsec VPN — Phase 2
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def vpn_ipsec_phase2_list(
         ctx: Context,
         instance: Annotated[
@@ -290,7 +291,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def vpn_ipsec_phase2_get(
         ctx: Context,
         name: Annotated[str, Field(description="Phase 2 selector name.")],
@@ -323,7 +324,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=CREATES)
     async def vpn_ipsec_phase2_create(
         ctx: Context,
         name: Annotated[str, Field(description="Phase 2 selector name.")],
@@ -412,7 +413,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=DESTRUCTIVE)
     async def vpn_ipsec_phase2_delete(
         ctx: Context,
         name: Annotated[str, Field(description="Phase 2 selector name to delete.")],
@@ -449,7 +450,7 @@ def register(mcp: FastMCP) -> None:
     # SSL VPN
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def vpn_ssl_settings_get(
         ctx: Context,
         instance: Annotated[
@@ -479,7 +480,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=DESTRUCTIVE)
     async def vpn_ssl_settings_update(
         ctx: Context,
         status: Annotated[
@@ -544,7 +545,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def vpn_ssl_portal_list(
         ctx: Context,
         instance: Annotated[
@@ -574,7 +575,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def vpn_ssl_portal_get(
         ctx: Context,
         name: Annotated[str, Field(description="SSL VPN portal name.")],
@@ -605,7 +606,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=CREATES)
     async def vpn_ssl_portal_create(
         ctx: Context,
         name: Annotated[str, Field(description="Portal name.")],
@@ -678,7 +679,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=DESTRUCTIVE)
     async def vpn_ssl_portal_delete(
         ctx: Context,
         name: Annotated[str, Field(description="SSL VPN portal name to delete.")],
@@ -709,7 +710,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def vpn_ssl_web_host_check_software_list(
         ctx: Context,
         instance: Annotated[
@@ -743,7 +744,7 @@ def register(mcp: FastMCP) -> None:
     # VPN Certificates
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def vpn_certificate_ca_list(
         ctx: Context,
         instance: Annotated[
@@ -773,7 +774,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def vpn_certificate_local_list(
         ctx: Context,
         instance: Annotated[
@@ -803,7 +804,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def vpn_certificate_remote_list(
         ctx: Context,
         instance: Annotated[
@@ -833,7 +834,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def vpn_certificate_ocsp_server_list(
         ctx: Context,
         instance: Annotated[
@@ -867,7 +868,7 @@ def register(mcp: FastMCP) -> None:
     # Monitor: VPN Status
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_vpn_ipsec(
         ctx: Context,
         instance: Annotated[
@@ -897,7 +898,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=UPDATES)
     async def monitor_vpn_ipsec_tunnel_up(
         ctx: Context,
         tunnel_name: Annotated[
@@ -932,7 +933,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=DESTRUCTIVE)
     async def monitor_vpn_ipsec_tunnel_down(
         ctx: Context,
         tunnel_name: Annotated[
@@ -967,7 +968,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_vpn_ssl_list(
         ctx: Context,
         instance: Annotated[
@@ -997,7 +998,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=DESTRUCTIVE)
     async def monitor_vpn_ssl_delete_user(
         ctx: Context,
         username: Annotated[str, Field(description="SSL VPN username to disconnect.")],
@@ -1038,7 +1039,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_vpn_certificate_valid(
         ctx: Context,
         instance: Annotated[

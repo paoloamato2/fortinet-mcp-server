@@ -13,6 +13,7 @@ from pydantic import Field
 
 from fortios_client import FortiOSError
 from instances import FortiOSAPI
+from tool_annotations import READ_ONLY
 
 
 def register(mcp: FastMCP) -> None:
@@ -22,7 +23,7 @@ def register(mcp: FastMCP) -> None:
     # NETWORK
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_network_arp_list(
         ctx: Context,
         instance: Annotated[
@@ -52,7 +53,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_network_lldp_neighbors(
         ctx: Context,
         instance: Annotated[
@@ -82,7 +83,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_interface_dhcp_status(
         ctx: Context,
         interface: Annotated[
@@ -123,7 +124,7 @@ def register(mcp: FastMCP) -> None:
     # FORTIVIEW / TOP TALKERS
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_fortiview_top_sources(
         ctx: Context,
         count: Annotated[
@@ -158,7 +159,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_fortiview_top_destinations(
         ctx: Context,
         count: Annotated[
@@ -195,7 +196,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_fortiview_top_applications(
         ctx: Context,
         count: Annotated[
@@ -232,7 +233,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_fortiview_top_threat_map(
         ctx: Context,
         instance: Annotated[
@@ -268,7 +269,7 @@ def register(mcp: FastMCP) -> None:
     # LICENSE / FORTIGUARD STATUS
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_license_status(
         ctx: Context,
         instance: Annotated[
@@ -298,7 +299,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_license_forticare_resellers(
         ctx: Context,
         instance: Annotated[
@@ -332,7 +333,7 @@ def register(mcp: FastMCP) -> None:
     # ENDPOINT CONTROL
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_endpoint_summary(
         ctx: Context,
         instance: Annotated[
@@ -362,7 +363,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_endpoint_record_list(
         ctx: Context,
         count: Annotated[
@@ -401,7 +402,7 @@ def register(mcp: FastMCP) -> None:
     # IPS / UTM
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_ips_anomaly(
         ctx: Context,
         instance: Annotated[
@@ -431,7 +432,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_utm_app_categories(
         ctx: Context,
         instance: Annotated[
@@ -465,7 +466,7 @@ def register(mcp: FastMCP) -> None:
     # SWITCH CONTROLLER
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_switch_controller_managed_switch(
         ctx: Context,
         instance: Annotated[
@@ -497,7 +498,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_switch_controller_port_stats(
         ctx: Context,
         switch_id: Annotated[
@@ -540,7 +541,7 @@ def register(mcp: FastMCP) -> None:
     # SECURITY RATING
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_security_rating_summary(
         ctx: Context,
         instance: Annotated[
@@ -574,7 +575,7 @@ def register(mcp: FastMCP) -> None:
     # CONFIG BACKUP
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_system_config_backup(
         ctx: Context,
         scope: Annotated[
@@ -615,7 +616,7 @@ def register(mcp: FastMCP) -> None:
     # RUNNING PROCESSES
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_system_process_list(
         ctx: Context,
         instance: Annotated[
@@ -649,7 +650,7 @@ def register(mcp: FastMCP) -> None:
     # INTERFACES (real-time stats)
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_interface_stats(
         ctx: Context,
         interface: Annotated[
@@ -695,7 +696,7 @@ def register(mcp: FastMCP) -> None:
     # DIAGNOSE / PING / TRACEROUTE
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_network_ping(
         ctx: Context,
         destination: Annotated[
@@ -747,7 +748,7 @@ def register(mcp: FastMCP) -> None:
     # GEOIP
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_geoip_lookup(
         ctx: Context,
         ip_address: Annotated[

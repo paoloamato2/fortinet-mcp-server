@@ -14,6 +14,7 @@ from pydantic import Field
 
 from fortios_client import FortiOSError
 from instances import FortiOSAPI
+from tool_annotations import CREATES, DESTRUCTIVE, READ_ONLY
 
 
 def register(mcp: FastMCP) -> None:
@@ -23,7 +24,7 @@ def register(mcp: FastMCP) -> None:
     # WTP PROFILES (AP Profiles)
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def wifi_wtp_profile_list(
         ctx: Context,
         instance: Annotated[
@@ -53,7 +54,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def wifi_wtp_profile_get(
         ctx: Context,
         name: Annotated[str, Field(description="WTP profile name.")],
@@ -90,7 +91,7 @@ def register(mcp: FastMCP) -> None:
     # WTP (Access Points)
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def wifi_wtp_list(
         ctx: Context,
         instance: Annotated[
@@ -120,7 +121,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def wifi_wtp_get(
         ctx: Context,
         wtp_id: Annotated[str, Field(description="WTP (AP) serial number or name.")],
@@ -151,7 +152,9 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    # DESTRUCTIVE, not an operational deauth: this is a cmdb_delete that
+    # removes the WTP configuration entry.
+    @mcp.tool(annotations=DESTRUCTIVE)
     async def wifi_wtp_deauthorize(
         ctx: Context,
         wtp_id: Annotated[str, Field(description="WTP serial number to deauthorize.")],
@@ -188,7 +191,7 @@ def register(mcp: FastMCP) -> None:
     # VAP (Virtual AP / SSID)
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def wifi_vap_list(
         ctx: Context,
         instance: Annotated[
@@ -218,7 +221,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def wifi_vap_get(
         ctx: Context,
         name: Annotated[str, Field(description="VAP (SSID) name.")],
@@ -249,7 +252,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=CREATES)
     async def wifi_vap_create(
         ctx: Context,
         name: Annotated[str, Field(description="SSID name.")],
@@ -321,7 +324,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=DESTRUCTIVE)
     async def wifi_vap_delete(
         ctx: Context,
         name: Annotated[str, Field(description="VAP (SSID) name to delete.")],
@@ -358,7 +361,7 @@ def register(mcp: FastMCP) -> None:
     # VAP GROUPS
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def wifi_vap_group_list(
         ctx: Context,
         instance: Annotated[
@@ -392,7 +395,7 @@ def register(mcp: FastMCP) -> None:
     # WIRELESS CONTROLLER GLOBAL
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def wifi_controller_setting_get(
         ctx: Context,
         instance: Annotated[
@@ -422,7 +425,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def wifi_qos_profile_list(
         ctx: Context,
         instance: Annotated[
@@ -452,7 +455,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def wifi_rf_analysis_get(
         ctx: Context,
         instance: Annotated[
@@ -486,7 +489,7 @@ def register(mcp: FastMCP) -> None:
     # HOTSPOT 2.0
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def wifi_hotspot20_profile_list(
         ctx: Context,
         instance: Annotated[
@@ -522,7 +525,7 @@ def register(mcp: FastMCP) -> None:
     # MONITOR: WiFi Status
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_wifi_managed_ap(
         ctx: Context,
         instance: Annotated[
@@ -552,7 +555,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_wifi_client_list(
         ctx: Context,
         ap_serial: Annotated[
@@ -595,7 +598,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_wifi_rogue_ap(
         ctx: Context,
         instance: Annotated[
@@ -625,7 +628,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_wifi_spectrum_analysis(
         ctx: Context,
         instance: Annotated[
@@ -655,7 +658,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_wifi_ap_status(
         ctx: Context,
         wtp_id: Annotated[
@@ -695,7 +698,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_wifi_interfering_ap(
         ctx: Context,
         instance: Annotated[

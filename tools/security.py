@@ -15,6 +15,7 @@ from pydantic import Field
 
 from fortios_client import FortiOSError
 from instances import FortiOSAPI
+from tool_annotations import CREATES, DESTRUCTIVE, READ_ONLY
 
 
 def register(mcp: FastMCP) -> None:
@@ -24,7 +25,7 @@ def register(mcp: FastMCP) -> None:
     # IPS (Intrusion Prevention System)
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def ips_sensor_list(
         ctx: Context,
         instance: Annotated[
@@ -54,7 +55,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def ips_sensor_get(
         ctx: Context,
         name: Annotated[str, Field(description="IPS sensor name.")],
@@ -85,7 +86,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=CREATES)
     async def ips_sensor_create(
         ctx: Context,
         name: Annotated[str, Field(description="IPS sensor name.")],
@@ -132,7 +133,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=DESTRUCTIVE)
     async def ips_sensor_delete(
         ctx: Context,
         name: Annotated[str, Field(description="IPS sensor name to delete.")],
@@ -163,7 +164,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def ips_custom_list(
         ctx: Context,
         instance: Annotated[
@@ -197,7 +198,7 @@ def register(mcp: FastMCP) -> None:
     # ANTIVIRUS
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def antivirus_profile_list(
         ctx: Context,
         instance: Annotated[
@@ -227,7 +228,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def antivirus_profile_get(
         ctx: Context,
         name: Annotated[str, Field(description="Antivirus profile name.")],
@@ -258,7 +259,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=CREATES)
     async def antivirus_profile_create(
         ctx: Context,
         name: Annotated[str, Field(description="Profile name.")],
@@ -302,7 +303,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def antivirus_settings_get(
         ctx: Context,
         instance: Annotated[
@@ -336,7 +337,7 @@ def register(mcp: FastMCP) -> None:
     # WEBFILTER
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def webfilter_profile_list(
         ctx: Context,
         instance: Annotated[
@@ -366,7 +367,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def webfilter_profile_get(
         ctx: Context,
         name: Annotated[str, Field(description="Web filter profile name.")],
@@ -397,7 +398,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def webfilter_urlfilter_list(
         ctx: Context,
         instance: Annotated[
@@ -427,7 +428,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def webfilter_override_list(
         ctx: Context,
         instance: Annotated[
@@ -457,7 +458,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def webfilter_content_list(
         ctx: Context,
         instance: Annotated[
@@ -491,7 +492,7 @@ def register(mcp: FastMCP) -> None:
     # APPLICATION CONTROL
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def application_list_profiles(
         ctx: Context,
         instance: Annotated[
@@ -521,7 +522,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def application_list_get(
         ctx: Context,
         name: Annotated[str, Field(description="Application profile name.")],
@@ -552,7 +553,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def application_group_list(
         ctx: Context,
         instance: Annotated[
@@ -586,7 +587,7 @@ def register(mcp: FastMCP) -> None:
     # DLP (Data Loss Prevention)
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def dlp_sensor_list(
         ctx: Context,
         instance: Annotated[
@@ -616,7 +617,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def dlp_dictionary_list(
         ctx: Context,
         instance: Annotated[
@@ -646,7 +647,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def dlp_filepattern_list(
         ctx: Context,
         instance: Annotated[
@@ -680,7 +681,7 @@ def register(mcp: FastMCP) -> None:
     # EMAIL FILTER
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def emailfilter_profile_list(
         ctx: Context,
         instance: Annotated[
@@ -710,7 +711,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def emailfilter_bwl_list(
         ctx: Context,
         instance: Annotated[
@@ -744,7 +745,7 @@ def register(mcp: FastMCP) -> None:
     # DNS FILTER
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def dnsfilter_profile_list(
         ctx: Context,
         instance: Annotated[
@@ -774,7 +775,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def dnsfilter_domain_filter_list(
         ctx: Context,
         instance: Annotated[
@@ -808,7 +809,7 @@ def register(mcp: FastMCP) -> None:
     # FILE FILTER
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def file_filter_profile_list(
         ctx: Context,
         instance: Annotated[
@@ -842,7 +843,7 @@ def register(mcp: FastMCP) -> None:
     # ICAP
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def icap_server_list(
         ctx: Context,
         instance: Annotated[
@@ -872,7 +873,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def icap_profile_list(
         ctx: Context,
         instance: Annotated[
@@ -906,7 +907,7 @@ def register(mcp: FastMCP) -> None:
     # SSH FILTER
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def ssh_filter_profile_list(
         ctx: Context,
         instance: Annotated[
@@ -940,7 +941,7 @@ def register(mcp: FastMCP) -> None:
     # WAF (Web Application Firewall)
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def waf_profile_list(
         ctx: Context,
         instance: Annotated[
@@ -970,7 +971,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def waf_signature_list(
         ctx: Context,
         instance: Annotated[
@@ -1004,7 +1005,7 @@ def register(mcp: FastMCP) -> None:
     # VOIP
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def voip_profile_list(
         ctx: Context,
         instance: Annotated[
@@ -1038,7 +1039,7 @@ def register(mcp: FastMCP) -> None:
     # VIRTUAL PATCH
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def virtual_patch_profile_list(
         ctx: Context,
         instance: Annotated[
@@ -1072,7 +1073,7 @@ def register(mcp: FastMCP) -> None:
     # AUTOMATION (FortiOS Automation Stitches)
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def automation_setting_get(
         ctx: Context,
         instance: Annotated[
@@ -1106,7 +1107,7 @@ def register(mcp: FastMCP) -> None:
     # ZTNA (Zero Trust Network Access)
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def ztna_server_list(
         ctx: Context,
         instance: Annotated[
@@ -1136,7 +1137,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def ztna_tag_policy_list(
         ctx: Context,
         instance: Annotated[

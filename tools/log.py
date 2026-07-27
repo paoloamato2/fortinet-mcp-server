@@ -13,6 +13,7 @@ from pydantic import Field
 
 from fortios_client import FortiOSError
 from instances import FortiOSAPI
+from tool_annotations import DESTRUCTIVE, READ_ONLY
 
 
 # Log source backends
@@ -51,7 +52,7 @@ def register(mcp: FastMCP) -> None:
     # GENERIC LOG QUERY (any backend + type)
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def log_query(
         ctx: Context,
         source: Annotated[
@@ -146,7 +147,7 @@ def register(mcp: FastMCP) -> None:
     # TRAFFIC LOGS
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def log_traffic_forward(
         ctx: Context,
         rows: Annotated[
@@ -215,7 +216,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def log_traffic_local(
         ctx: Context,
         rows: Annotated[
@@ -258,7 +259,7 @@ def register(mcp: FastMCP) -> None:
     # EVENT LOGS
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def log_event_system(
         ctx: Context,
         rows: Annotated[
@@ -297,7 +298,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def log_event_vpn(
         ctx: Context,
         rows: Annotated[
@@ -336,7 +337,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def log_event_user(
         ctx: Context,
         rows: Annotated[
@@ -383,7 +384,7 @@ def register(mcp: FastMCP) -> None:
     # SECURITY (UTM / THREAT) LOGS
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def log_virus(
         ctx: Context,
         rows: Annotated[
@@ -427,7 +428,7 @@ def register(mcp: FastMCP) -> None:
             except FortiOSError as exc2:
                 return {"error": str(exc2), "status_code": exc2.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def log_webfilter(
         ctx: Context,
         rows: Annotated[
@@ -474,7 +475,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def log_ips_attack(
         ctx: Context,
         rows: Annotated[
@@ -517,7 +518,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def log_app_ctrl(
         ctx: Context,
         rows: Annotated[
@@ -561,7 +562,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def log_dns(
         ctx: Context,
         rows: Annotated[
@@ -604,7 +605,7 @@ def register(mcp: FastMCP) -> None:
     # LOG CONFIGURATION
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def log_disk_filter_get(
         ctx: Context,
         instance: Annotated[
@@ -634,7 +635,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def log_disk_setting_get(
         ctx: Context,
         instance: Annotated[
@@ -664,7 +665,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def log_memory_setting_get(
         ctx: Context,
         instance: Annotated[
@@ -694,7 +695,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def log_fortianalyzer_setting_get(
         ctx: Context,
         instance: Annotated[
@@ -724,7 +725,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=DESTRUCTIVE)
     async def log_fortianalyzer_setting_update(
         ctx: Context,
         status: Annotated[

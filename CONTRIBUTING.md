@@ -95,8 +95,9 @@ git push origin feat/my-new-tool
 
 1. Choose the correct module in `tools/` (or propose a new one).
 2. Define the tool function with full typing and a clear docstring — the docstring becomes the tool description shown to the LLM.
-3. Register the tool in `server.py` if it requires registration outside the module (check how existing tools are registered).
-4. Add at least one test in `tests/` covering the happy path and one error case.
+3. Declare a tool annotation category: `@mcp.tool(annotations=READ_ONLY)`, or `CREATES` / `UPDATES` / `DESTRUCTIVE` / `UNCONSTRAINED` from `tool_annotations.py`. A tool is `READ_ONLY` only when a call leaves both the FortiGate's stored configuration and its live session state as it found them — the HTTP verb does not decide it. If the tool writes, add it to `EXPECTED_MUTATING` in `tests/test_tool_annotations.py` in the same commit; that edit is the review prompt. See `docs/superpowers/specs/2026-07-27-mcp-tool-annotations-design.md`.
+4. Register the tool in `server.py` if it requires registration outside the module (check how existing tools are registered).
+5. Add at least one test in `tests/` covering the happy path and one error case.
 
 ---
 

@@ -14,12 +14,13 @@ from mcp.server.fastmcp import Context, FastMCP
 from pydantic import Field
 
 from instances import InstanceRegistry
+from tool_annotations import READ_ONLY
 
 
 def register(mcp: FastMCP) -> None:
     """Register the fleet meta tools onto the FastMCP instance."""
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def fortigate_list(
         ctx: Context,
         check_health: Annotated[

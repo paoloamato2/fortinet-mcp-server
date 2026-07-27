@@ -12,6 +12,7 @@ from pydantic import Field
 
 from fortios_client import FortiOSError
 from instances import FortiOSAPI
+from tool_annotations import CREATES, DESTRUCTIVE, READ_ONLY
 
 
 def register(mcp: FastMCP) -> None:
@@ -21,7 +22,7 @@ def register(mcp: FastMCP) -> None:
     # STATIC ROUTES
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def router_static_list(
         ctx: Context,
         instance: Annotated[
@@ -51,7 +52,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def router_static_get(
         ctx: Context,
         seq_num: Annotated[int, Field(description="Static route sequence number.")],
@@ -82,7 +83,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=CREATES)
     async def router_static_create(
         ctx: Context,
         dst: Annotated[
@@ -149,7 +150,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=DESTRUCTIVE)
     async def router_static_update(
         ctx: Context,
         seq_num: Annotated[int, Field(description="Route sequence number to update.")],
@@ -213,7 +214,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=DESTRUCTIVE)
     async def router_static_delete(
         ctx: Context,
         seq_num: Annotated[int, Field(description="Route sequence number to delete.")],
@@ -248,7 +249,7 @@ def register(mcp: FastMCP) -> None:
     # STATIC ROUTES (IPv6)
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def router_static6_list(
         ctx: Context,
         instance: Annotated[
@@ -282,7 +283,7 @@ def register(mcp: FastMCP) -> None:
     # POLICY ROUTES
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def router_policy_list(
         ctx: Context,
         instance: Annotated[
@@ -316,7 +317,7 @@ def register(mcp: FastMCP) -> None:
     # OSPF
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def router_ospf_get(
         ctx: Context,
         instance: Annotated[
@@ -346,7 +347,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def router_ospf6_get(
         ctx: Context,
         instance: Annotated[
@@ -380,7 +381,7 @@ def register(mcp: FastMCP) -> None:
     # BGP
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def router_bgp_get(
         ctx: Context,
         instance: Annotated[
@@ -410,7 +411,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=DESTRUCTIVE)
     async def router_bgp_update(
         ctx: Context,
         as_number: Annotated[
@@ -459,7 +460,7 @@ def register(mcp: FastMCP) -> None:
     # RIP
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def router_rip_get(
         ctx: Context,
         instance: Annotated[
@@ -493,7 +494,7 @@ def register(mcp: FastMCP) -> None:
     # PREFIX LISTS & ROUTE MAPS
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def router_prefix_list_list(
         ctx: Context,
         instance: Annotated[
@@ -523,7 +524,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def router_route_map_list(
         ctx: Context,
         instance: Annotated[
@@ -553,7 +554,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def router_community_list_list(
         ctx: Context,
         instance: Annotated[
@@ -587,7 +588,7 @@ def register(mcp: FastMCP) -> None:
     # ACCESS LISTS
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def router_access_list_list(
         ctx: Context,
         instance: Annotated[
@@ -621,7 +622,7 @@ def register(mcp: FastMCP) -> None:
     # SD-WAN
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def router_sdwan_get(
         ctx: Context,
         instance: Annotated[
@@ -659,7 +660,7 @@ def register(mcp: FastMCP) -> None:
     # MONITOR: Routing Table & Operations
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_router_ipv4(
         ctx: Context,
         instance: Annotated[
@@ -689,7 +690,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_router_ipv6(
         ctx: Context,
         instance: Annotated[
@@ -719,7 +720,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_router_lookup(
         ctx: Context,
         destination: Annotated[
@@ -764,7 +765,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_router_lookup6(
         ctx: Context,
         destination: Annotated[
@@ -799,7 +800,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_router_statistics(
         ctx: Context,
         instance: Annotated[
@@ -829,7 +830,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_sdwan_health_check(
         ctx: Context,
         instance: Annotated[
@@ -859,7 +860,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_sdwan_members(
         ctx: Context,
         instance: Annotated[

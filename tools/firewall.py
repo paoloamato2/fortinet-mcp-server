@@ -12,6 +12,7 @@ from pydantic import Field
 
 from fortios_client import FortiOSError
 from instances import FortiOSAPI
+from tool_annotations import CREATES, DESTRUCTIVE, READ_ONLY
 
 
 def register(mcp: FastMCP) -> None:
@@ -21,7 +22,7 @@ def register(mcp: FastMCP) -> None:
     # FIREWALL POLICIES  (IPv4)
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def firewall_policy_list(
         ctx: Context,
         start: Annotated[
@@ -83,7 +84,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def firewall_policy_get(
         ctx: Context,
         policy_id: Annotated[int, Field(description="Firewall policy ID number.")],
@@ -114,7 +115,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=CREATES)
     async def firewall_policy_create(
         ctx: Context,
         name: Annotated[str, Field(description="Policy name.")],
@@ -194,7 +195,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=DESTRUCTIVE)
     async def firewall_policy_update(
         ctx: Context,
         policy_id: Annotated[int, Field(description="Firewall policy ID to update.")],
@@ -261,7 +262,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=DESTRUCTIVE)
     async def firewall_policy_delete(
         ctx: Context,
         policy_id: Annotated[int, Field(description="Firewall policy ID to delete.")],
@@ -292,7 +293,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=DESTRUCTIVE)
     async def firewall_policy_move(
         ctx: Context,
         policy_id: Annotated[int, Field(description="Policy ID to move.")],
@@ -342,7 +343,7 @@ def register(mcp: FastMCP) -> None:
     # FIREWALL POLICIES  (IPv6)
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def firewall_policy6_list(
         ctx: Context,
         instance: Annotated[
@@ -376,7 +377,7 @@ def register(mcp: FastMCP) -> None:
     # ADDRESS OBJECTS
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def firewall_address_list(
         ctx: Context,
         filter_type: Annotated[
@@ -416,7 +417,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def firewall_address_get(
         ctx: Context,
         name: Annotated[str, Field(description="Address object name.")],
@@ -447,7 +448,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=CREATES)
     async def firewall_address_create(
         ctx: Context,
         name: Annotated[str, Field(description="Address object name.")],
@@ -526,7 +527,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=DESTRUCTIVE)
     async def firewall_address_update(
         ctx: Context,
         name: Annotated[str, Field(description="Address object name to update.")],
@@ -575,7 +576,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=DESTRUCTIVE)
     async def firewall_address_delete(
         ctx: Context,
         name: Annotated[str, Field(description="Address object name to delete.")],
@@ -610,7 +611,7 @@ def register(mcp: FastMCP) -> None:
     # ADDRESS GROUPS
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def firewall_addrgrp_list(
         ctx: Context,
         instance: Annotated[
@@ -640,7 +641,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def firewall_addrgrp_get(
         ctx: Context,
         name: Annotated[str, Field(description="Address group name.")],
@@ -671,7 +672,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=CREATES)
     async def firewall_addrgrp_create(
         ctx: Context,
         name: Annotated[str, Field(description="Address group name.")],
@@ -717,7 +718,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=DESTRUCTIVE)
     async def firewall_addrgrp_delete(
         ctx: Context,
         name: Annotated[str, Field(description="Address group name to delete.")],
@@ -752,7 +753,7 @@ def register(mcp: FastMCP) -> None:
     # SERVICE OBJECTS
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def firewall_service_list(
         ctx: Context,
         instance: Annotated[
@@ -782,7 +783,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def firewall_service_get(
         ctx: Context,
         name: Annotated[str, Field(description="Service object name.")],
@@ -813,7 +814,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=CREATES)
     async def firewall_service_create(
         ctx: Context,
         name: Annotated[str, Field(description="Service object name.")],
@@ -867,7 +868,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def firewall_service_grp_list(
         ctx: Context,
         instance: Annotated[
@@ -901,7 +902,7 @@ def register(mcp: FastMCP) -> None:
     # VIRTUAL IPs (VIP)
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def firewall_vip_list(
         ctx: Context,
         instance: Annotated[
@@ -931,7 +932,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def firewall_vip_get(
         ctx: Context,
         name: Annotated[str, Field(description="VIP object name.")],
@@ -962,7 +963,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=CREATES)
     async def firewall_vip_create(
         ctx: Context,
         name: Annotated[str, Field(description="VIP name.")],
@@ -1043,7 +1044,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=DESTRUCTIVE)
     async def firewall_vip_delete(
         ctx: Context,
         name: Annotated[str, Field(description="VIP name to delete.")],
@@ -1078,7 +1079,7 @@ def register(mcp: FastMCP) -> None:
     # VIP GROUPS
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def firewall_vipgrp_list(
         ctx: Context,
         instance: Annotated[
@@ -1112,7 +1113,7 @@ def register(mcp: FastMCP) -> None:
     # IP POOLS (source NAT)
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def firewall_ippool_list(
         ctx: Context,
         instance: Annotated[
@@ -1142,7 +1143,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=CREATES)
     async def firewall_ippool_create(
         ctx: Context,
         name: Annotated[str, Field(description="IP pool name.")],
@@ -1197,7 +1198,7 @@ def register(mcp: FastMCP) -> None:
     # SCHEDULES
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def firewall_schedule_one_time_list(
         ctx: Context,
         instance: Annotated[
@@ -1227,7 +1228,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def firewall_schedule_recurring_list(
         ctx: Context,
         instance: Annotated[
@@ -1261,7 +1262,7 @@ def register(mcp: FastMCP) -> None:
     # CENTRAL SNAT
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def firewall_central_snat_list(
         ctx: Context,
         instance: Annotated[
@@ -1295,7 +1296,7 @@ def register(mcp: FastMCP) -> None:
     # SSL/SSH INSPECTION PROFILES
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def firewall_ssl_ssh_profile_list(
         ctx: Context,
         instance: Annotated[
@@ -1329,7 +1330,7 @@ def register(mcp: FastMCP) -> None:
     # SHAPING POLICIES
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def firewall_shaping_policy_list(
         ctx: Context,
         instance: Annotated[
@@ -1363,7 +1364,7 @@ def register(mcp: FastMCP) -> None:
     # MONITOR: FIREWALL SESSIONS
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_firewall_session_list(
         ctx: Context,
         count: Annotated[
@@ -1427,7 +1428,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=DESTRUCTIVE)
     async def monitor_firewall_session_close(
         ctx: Context,
         proto: Annotated[int, Field(description="IP protocol number (6=TCP, 17=UDP).")],
@@ -1469,7 +1470,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_firewall_policy_stats(
         ctx: Context,
         instance: Annotated[
@@ -1499,7 +1500,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_firewall_address_dynamic(
         ctx: Context,
         instance: Annotated[
@@ -1529,7 +1530,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_firewall_ip_list(
         ctx: Context,
         instance: Annotated[

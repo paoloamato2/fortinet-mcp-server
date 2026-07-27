@@ -12,6 +12,7 @@ from pydantic import Field
 
 from fortios_client import FortiOSError
 from instances import FortiOSAPI
+from tool_annotations import CREATES, DESTRUCTIVE, READ_ONLY
 
 
 def register(mcp: FastMCP) -> None:
@@ -21,7 +22,7 @@ def register(mcp: FastMCP) -> None:
     # LOCAL USERS
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def user_local_list(
         ctx: Context,
         instance: Annotated[
@@ -51,7 +52,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def user_local_get(
         ctx: Context,
         name: Annotated[str, Field(description="Local username.")],
@@ -82,7 +83,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=CREATES)
     async def user_local_create(
         ctx: Context,
         name: Annotated[str, Field(description="Username (must be unique).")],
@@ -150,7 +151,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=DESTRUCTIVE)
     async def user_local_update(
         ctx: Context,
         name: Annotated[str, Field(description="Username to update.")],
@@ -205,7 +206,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=DESTRUCTIVE)
     async def user_local_delete(
         ctx: Context,
         name: Annotated[str, Field(description="Username to delete.")],
@@ -240,7 +241,7 @@ def register(mcp: FastMCP) -> None:
     # USER GROUPS
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def user_group_list(
         ctx: Context,
         instance: Annotated[
@@ -270,7 +271,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def user_group_get(
         ctx: Context,
         name: Annotated[str, Field(description="User group name.")],
@@ -301,7 +302,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=CREATES)
     async def user_group_create(
         ctx: Context,
         name: Annotated[str, Field(description="Group name.")],
@@ -357,7 +358,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=DESTRUCTIVE)
     async def user_group_delete(
         ctx: Context,
         name: Annotated[str, Field(description="User group name to delete.")],
@@ -392,7 +393,7 @@ def register(mcp: FastMCP) -> None:
     # RADIUS SERVERS
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def user_radius_list(
         ctx: Context,
         instance: Annotated[
@@ -422,7 +423,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def user_radius_get(
         ctx: Context,
         name: Annotated[str, Field(description="RADIUS server name.")],
@@ -453,7 +454,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=CREATES)
     async def user_radius_create(
         ctx: Context,
         name: Annotated[str, Field(description="RADIUS server name.")],
@@ -511,7 +512,7 @@ def register(mcp: FastMCP) -> None:
     # LDAP SERVERS
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def user_ldap_list(
         ctx: Context,
         instance: Annotated[
@@ -541,7 +542,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=CREATES)
     async def user_ldap_create(
         ctx: Context,
         name: Annotated[str, Field(description="LDAP server name.")],
@@ -614,7 +615,7 @@ def register(mcp: FastMCP) -> None:
     # TACACS+ SERVERS
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def user_tacacs_list(
         ctx: Context,
         instance: Annotated[
@@ -648,7 +649,7 @@ def register(mcp: FastMCP) -> None:
     # SAML / SSO
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def user_saml_list(
         ctx: Context,
         instance: Annotated[
@@ -682,7 +683,7 @@ def register(mcp: FastMCP) -> None:
     # MONITOR: User Sessions
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_user_firewall(
         ctx: Context,
         ip_address: Annotated[
@@ -723,7 +724,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_user_fortitoken_list(
         ctx: Context,
         instance: Annotated[
@@ -753,7 +754,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=DESTRUCTIVE)
     async def monitor_user_disconnect(
         ctx: Context,
         id_type: Annotated[

@@ -12,6 +12,7 @@ from pydantic import Field
 
 from fortios_client import FortiOSError
 from instances import FortiOSAPI
+from tool_annotations import CREATES, DESTRUCTIVE, READ_ONLY
 
 
 def register(mcp: FastMCP) -> None:
@@ -21,7 +22,7 @@ def register(mcp: FastMCP) -> None:
     # System Status & Info
     # ------------------------------------------------------------------
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def system_status(
         ctx: Context,
         instance: Annotated[
@@ -52,7 +53,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def system_resource_usage(
         ctx: Context,
         instance: Annotated[
@@ -82,7 +83,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def system_performance_status(
         ctx: Context,
         instance: Annotated[
@@ -112,7 +113,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def system_ha_status(
         ctx: Context,
         instance: Annotated[
@@ -142,7 +143,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def system_firmware_list(
         ctx: Context,
         instance: Annotated[
@@ -172,7 +173,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def system_time_get(
         ctx: Context,
         instance: Annotated[
@@ -206,7 +207,7 @@ def register(mcp: FastMCP) -> None:
     # Global Configuration
     # ------------------------------------------------------------------
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def system_global_get(
         ctx: Context,
         instance: Annotated[
@@ -236,7 +237,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=DESTRUCTIVE)
     async def system_global_update(
         ctx: Context,
         hostname: Annotated[
@@ -301,7 +302,7 @@ def register(mcp: FastMCP) -> None:
     # Network Interfaces
     # ------------------------------------------------------------------
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def system_interface_list(
         ctx: Context,
         include_vlan: Annotated[
@@ -337,7 +338,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def system_interface_get(
         ctx: Context,
         name: Annotated[
@@ -370,7 +371,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=CREATES)
     async def system_interface_create(
         ctx: Context,
         name: Annotated[str, Field(description="Interface name.")],
@@ -454,7 +455,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=DESTRUCTIVE)
     async def system_interface_update(
         ctx: Context,
         name: Annotated[str, Field(description="Interface name to update.")],
@@ -520,7 +521,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=DESTRUCTIVE)
     async def system_interface_delete(
         ctx: Context,
         name: Annotated[str, Field(description="Interface name to delete.")],
@@ -555,7 +556,7 @@ def register(mcp: FastMCP) -> None:
     # DNS
     # ------------------------------------------------------------------
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def system_dns_get(
         ctx: Context,
         instance: Annotated[
@@ -585,7 +586,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=DESTRUCTIVE)
     async def system_dns_update(
         ctx: Context,
         primary: Annotated[
@@ -637,7 +638,7 @@ def register(mcp: FastMCP) -> None:
     # NTP
     # ------------------------------------------------------------------
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def system_ntp_get(
         ctx: Context,
         instance: Annotated[
@@ -667,7 +668,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=DESTRUCTIVE)
     async def system_ntp_update(
         ctx: Context,
         ntpsync: Annotated[
@@ -725,7 +726,7 @@ def register(mcp: FastMCP) -> None:
     # Admin accounts
     # ------------------------------------------------------------------
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def system_admin_list(
         ctx: Context,
         instance: Annotated[
@@ -755,7 +756,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def system_admin_get(
         ctx: Context,
         name: Annotated[str, Field(description="Administrator account name.")],
@@ -786,7 +787,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=CREATES)
     async def system_admin_create(
         ctx: Context,
         name: Annotated[str, Field(description="New administrator username.")],
@@ -846,7 +847,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=DESTRUCTIVE)
     async def system_admin_delete(
         ctx: Context,
         name: Annotated[
@@ -883,7 +884,7 @@ def register(mcp: FastMCP) -> None:
     # DHCP Server
     # ------------------------------------------------------------------
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def system_dhcp_server_list(
         ctx: Context,
         instance: Annotated[
@@ -913,7 +914,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def system_dhcp_server_get(
         ctx: Context,
         server_id: Annotated[int, Field(description="DHCP server ID.")],
@@ -944,7 +945,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=CREATES)
     async def system_dhcp_server_create(
         ctx: Context,
         interface: Annotated[
@@ -1009,7 +1010,7 @@ def register(mcp: FastMCP) -> None:
     # SNMP
     # ------------------------------------------------------------------
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def system_snmp_sysinfo_get(
         ctx: Context,
         instance: Annotated[
@@ -1039,7 +1040,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def system_snmp_community_list(
         ctx: Context,
         instance: Annotated[
@@ -1069,7 +1070,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def system_snmp_user_list(
         ctx: Context,
         instance: Annotated[
@@ -1103,7 +1104,7 @@ def register(mcp: FastMCP) -> None:
     # FortiGuard / Auto-Update
     # ------------------------------------------------------------------
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def system_fortiguard_status(
         ctx: Context,
         instance: Annotated[
@@ -1133,7 +1134,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def system_autoupdate_schedule_get(
         ctx: Context,
         instance: Annotated[
@@ -1167,7 +1168,7 @@ def register(mcp: FastMCP) -> None:
     # Certificates
     # ------------------------------------------------------------------
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def certificate_local_list(
         ctx: Context,
         instance: Annotated[
@@ -1197,7 +1198,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def certificate_ca_list(
         ctx: Context,
         instance: Annotated[
@@ -1231,7 +1232,7 @@ def register(mcp: FastMCP) -> None:
     # VDOM list
     # ------------------------------------------------------------------
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def system_vdom_list(
         ctx: Context,
         instance: Annotated[
@@ -1265,7 +1266,7 @@ def register(mcp: FastMCP) -> None:
     # Syslog
     # ------------------------------------------------------------------
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def log_syslogd_get(
         ctx: Context,
         instance: Annotated[
