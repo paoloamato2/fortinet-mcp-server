@@ -47,6 +47,22 @@ def test_every_tool_accepts_an_instance_parameter() -> None:
     assert missing == [], f"tools missing an 'instance' parameter: {missing}"
 
 
+def test_instance_immediately_precedes_vdom() -> None:
+    misordered: list[str] = []
+    for path in _tool_modules():
+        if path.name in MODULES_WITHOUT_INSTANCE_PARAM:
+            continue
+        for fn in _tool_functions(path):
+            args = [a.arg for a in fn.args.args]
+            if "instance" in args and "vdom" in args:
+                if args.index("instance") != args.index("vdom") - 1:
+                    misordered.append(f"{path.name}:{fn.lineno} {fn.name}")
+
+    assert misordered == [], (
+        f"'instance' must sit immediately before 'vdom': {misordered}"
+    )
+
+
 def test_no_tool_still_reads_the_legacy_client_key() -> None:
     offenders = [
         path.name
