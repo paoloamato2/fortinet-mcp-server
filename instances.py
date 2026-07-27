@@ -13,7 +13,7 @@ import logging
 import os
 import re
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Protocol
 
@@ -32,7 +32,7 @@ class InstanceConfig:
     name: str
     description: str
     host: str
-    api_token: str
+    api_token: str = field(repr=False)
     vdom: str = "root"
     verify_ssl: bool = False
     timeout: float = 30.0
@@ -62,6 +62,49 @@ def _fleet_defaults(errors: list[str]) -> dict[str, Any]:
     }
 
 
+def _required_string(
+    raw: dict[str, Any], key: str, where: str, errors: list[str]
+) -> str | None:
+    """Return the stripped string value of ``key``, or ``None`` on failure.
+
+    Records a ``'{key}' is required`` error when the key is absent or blank,
+    and a distinct ``'{key}' is not a string`` error when it is present with a
+    non-string value (e.g. JSON ``null``) — the latter must fail closed rather
+    than silently coercing via ``str()``.
+    """
+    if key not in raw:
+        errors.append(f"{where}: '{key}' is required")
+        return None
+    value = raw[key]
+    if not isinstance(value, str):
+        errors.append(f"{where}: '{key}' is not a string: {value!r}")
+        return None
+    value = value.strip()
+    if not value:
+        errors.append(f"{where}: '{key}' is required")
+        return None
+    return value
+
+
+def _optional_bool(
+    raw: dict[str, Any], key: str, default: bool, where: str, errors: list[str]
+) -> bool | None:
+    """Return the bool value of ``key``, ``default`` if absent, else ``None``.
+
+    ``None`` signals a present-but-wrong-type value (e.g. JSON ``null`` or the
+    string ``"false"``) and always comes with a recorded error, so callers can
+    treat ``None`` as "fail this instance" without confusing it with a real
+    ``False`` default.
+    """
+    if key not in raw:
+        return default
+    value = raw[key]
+    if not isinstance(value, bool):
+        errors.append(f"{where}: '{key}' is not a boolean: {value!r}")
+        return None
+    return value
+
+
 def _parse_instance(
     raw: Any, index: int, defaults: dict[str, Any], errors: list[str]
 ) -> InstanceConfig | None:
@@ -71,9 +114,8 @@ def _parse_instance(
         errors.append(f"{where}: expected a JSON object, got {type(raw).__name__}")
         return None
 
-    name = str(raw.get("name", "")).strip()
-    if not name:
-        errors.append(f"{where}: 'name' is required")
+    name = _required_string(raw, "name", where, errors)
+    if name is None:
         return None
     where = f"instance {name!r}"
     if name == FAN_OUT:
@@ -87,14 +129,12 @@ def _parse_instance(
         )
         return None
 
-    description = str(raw.get("description", "")).strip()
-    if not description:
-        errors.append(f"{where}: 'description' is required")
+    description = _required_string(raw, "description", where, errors)
+    if description is None:
         return None
 
-    host = str(raw.get("host", "")).strip()
-    if not host:
-        errors.append(f"{where}: 'host' is required")
+    host = _required_string(raw, "host", where, errors)
+    if host is None:
         return None
 
     inline_token = raw.get("api_token")
@@ -124,15 +164,37 @@ def _parse_instance(
             errors.append(f"{where}: 'timeout' is not a number: {raw['timeout']!r}")
             return None
 
+    # verify_ssl is checked first among the optional fields: a present-but-
+    # invalid value here would otherwise silently disable TLS certificate
+    # verification, which is the highest-severity outcome this function
+    # guards against.
+    verify_ssl = _optional_bool(
+        raw, "verify_ssl", bool(defaults["verify_ssl"]), where, errors
+    )
+    if verify_ssl is None:
+        return None
+
+    vdom = str(defaults["vdom"])
+    if "vdom" in raw:
+        vdom_raw = raw["vdom"]
+        if not isinstance(vdom_raw, str):
+            errors.append(f"{where}: 'vdom' is not a string: {vdom_raw!r}")
+            return None
+        vdom = vdom_raw.strip() or str(defaults["vdom"])
+
+    read_only = _optional_bool(raw, "read_only", False, where, errors)
+    if read_only is None:
+        return None
+
     return InstanceConfig(
         name=name,
         description=description,
         host=host,
         api_token=api_token,
-        vdom=str(raw.get("vdom", "")).strip() or str(defaults["vdom"]),
-        verify_ssl=bool(raw.get("verify_ssl", defaults["verify_ssl"])),
+        vdom=vdom,
+        verify_ssl=verify_ssl,
         timeout=timeout,
-        read_only=bool(raw.get("read_only", False)),
+        read_only=read_only,
     )
 
 

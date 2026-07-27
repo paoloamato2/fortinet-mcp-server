@@ -289,3 +289,211 @@ def test_no_configuration_at_all_is_reported() -> None:
 
     assert instances == []
     assert any("No FortiGate configured" in e for e in errors), errors
+
+
+def test_null_verify_ssl_is_rejected_rather_than_silently_disabling_tls(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A present `"verify_ssl": null` must fail closed, not coerce to False.
+
+    `bool(None)` is `False`, so silently coercing this field would disable TLS
+    certificate verification against a firewall management channel even when
+    the fleet default (`FORTIOS_VERIFY_SSL=true`) says otherwise.
+    """
+    monkeypatch.setenv("FORTIOS_VERIFY_SSL", "true")
+    path = _write(
+        tmp_path,
+        [
+            {
+                "name": "a",
+                "description": "d",
+                "host": "https://a",
+                "api_token": "t",
+                "verify_ssl": None,
+            }
+        ],
+    )
+    monkeypatch.setenv("FORTIOS_INSTANCES_FILE", path)
+
+    instances, errors = load_instances()
+
+    assert instances == []
+    assert any("'verify_ssl' is not a boolean" in e for e in errors), errors
+
+
+def test_null_vdom_is_rejected_rather_than_becoming_the_string_none(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("FORTIOS_VDOM", "mgmt")
+    path = _write(
+        tmp_path,
+        [
+            {
+                "name": "a",
+                "description": "d",
+                "host": "https://a",
+                "api_token": "t",
+                "vdom": None,
+            }
+        ],
+    )
+    monkeypatch.setenv("FORTIOS_INSTANCES_FILE", path)
+
+    instances, errors = load_instances()
+
+    assert instances == []
+    assert any("'vdom' is not a string" in e for e in errors), errors
+
+
+def test_null_name_is_rejected_rather_than_becoming_the_string_none(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path = _write(
+        tmp_path,
+        [{"name": None, "description": "B", "host": "https://b", "api_token": "t"}],
+    )
+    monkeypatch.setenv("FORTIOS_INSTANCES_FILE", path)
+
+    instances, errors = load_instances()
+
+    assert instances == []
+    assert any("'name' is not a string" in e for e in errors), errors
+
+
+def test_null_host_is_rejected(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    path = _write(
+        tmp_path,
+        [{"name": "a", "description": "d", "host": None, "api_token": "t"}],
+    )
+    monkeypatch.setenv("FORTIOS_INSTANCES_FILE", path)
+
+    instances, errors = load_instances()
+
+    assert instances == []
+    assert any("'host' is not a string" in e for e in errors), errors
+
+
+def test_null_description_is_rejected(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path = _write(
+        tmp_path,
+        [{"name": "a", "description": None, "host": "https://a", "api_token": "t"}],
+    )
+    monkeypatch.setenv("FORTIOS_INSTANCES_FILE", path)
+
+    instances, errors = load_instances()
+
+    assert instances == []
+    assert any("'description' is not a string" in e for e in errors), errors
+
+
+def test_string_read_only_is_rejected_rather_than_coerced_to_true(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """`"read_only": "false"` (a truthy non-empty string) must be an error,
+
+    not silently coerced to `True` via `bool("false")`.
+    """
+    path = _write(
+        tmp_path,
+        [
+            {
+                "name": "c",
+                "description": "C",
+                "host": "https://c",
+                "api_token": "t",
+                "read_only": "false",
+            }
+        ],
+    )
+    monkeypatch.setenv("FORTIOS_INSTANCES_FILE", path)
+
+    instances, errors = load_instances()
+
+    assert instances == []
+    assert any("'read_only' is not a boolean" in e for e in errors), errors
+
+
+def test_full_repro_payload_from_the_fix_wave_produces_only_recorded_errors(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The exact three-entry payload from the review finding: every entry is
+    invalid, and none of the four silent misconfigurations happen — no
+    instance is returned and each bad field is named in `errors`.
+
+    Each instance stops validation at its first bad field (consistent with
+    every other field check in `_parse_instance`), so instance "a" — which has
+    both `vdom: null` and `verify_ssl: null` — contributes one error for
+    whichever is checked first, not two. Three instances therefore produce
+    three recorded errors, not four.
+    """
+    monkeypatch.setenv("FORTIOS_VERIFY_SSL", "true")
+    monkeypatch.setenv("FORTIOS_VDOM", "mgmt")
+    path = _write(
+        tmp_path,
+        [
+            {
+                "name": "a",
+                "description": "A",
+                "host": "https://a",
+                "api_token": "t",
+                "verify_ssl": None,
+                "vdom": None,
+            },
+            {"name": None, "description": "B", "host": "https://b", "api_token": "t"},
+            {
+                "name": "c",
+                "description": "C",
+                "host": "https://c",
+                "api_token": "t",
+                "read_only": "false",
+            },
+        ],
+    )
+    monkeypatch.setenv("FORTIOS_INSTANCES_FILE", path)
+
+    instances, errors = load_instances()
+
+    assert instances == []
+    assert len(errors) == 3
+    assert any(
+        "'vdom' is not a string" in e or "'verify_ssl' is not a boolean" in e
+        for e in errors
+    ), errors
+    assert any("'name' is not a string" in e for e in errors), errors
+    assert any("'read_only' is not a boolean" in e for e in errors), errors
+
+
+def test_absent_optional_keys_still_inherit_fleet_defaults(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Guards the absent-key path: omitting vdom/verify_ssl/read_only entirely
+    must still inherit the fleet defaults exactly as before this fix wave."""
+    monkeypatch.setenv("FORTIOS_VDOM", "mgmt")
+    monkeypatch.setenv("FORTIOS_VERIFY_SSL", "true")
+    path = _write(
+        tmp_path,
+        [{"name": "a", "description": "d", "host": "https://a", "api_token": "t"}],
+    )
+    monkeypatch.setenv("FORTIOS_INSTANCES_FILE", path)
+
+    instances, errors = load_instances()
+
+    assert errors == []
+    assert len(instances) == 1
+    assert instances[0].vdom == "mgmt"
+    assert instances[0].verify_ssl is True
+    assert instances[0].read_only is False
+
+
+def test_repr_never_includes_the_api_token() -> None:
+    """Finding 2: the dataclass repr must not leak `api_token`."""
+    cfg = InstanceConfig(
+        name="a",
+        description="d",
+        host="https://a",
+        api_token="super-secret-token",
+    )
+
+    assert "super-secret-token" not in repr(cfg)

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import importlib
 import json
 from pathlib import Path
 
@@ -79,3 +80,37 @@ def test_instructions_mention_the_instance_parameter() -> None:
     instructions = server.mcp.instructions or ""
 
     assert "instance" in instructions
+
+
+def test_reloading_under_a_populated_fleet_renders_the_roster(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """`server._IMPORT_INSTANCES` is evaluated once, at import time — which,
+    for the test suite, happens at collection, before conftest's autouse env
+    scrub ever runs. The only prior assertion on the instructions block,
+    `"instance" in instructions`, passes even for the *empty*-fleet roster,
+    because `roster_text([])` itself contains the word "instances". Nothing
+    proved a populated, multi-device roster actually renders.
+
+    This test forces a re-import of `server` under a two-instance fleet (via
+    `importlib.reload`, since `import server` alone would hit the module
+    cache) and asserts the real rendered text: both instance names, and the
+    "`instance` is required" sentence that only appears once there is more
+    than one configured FortiGate.
+    """
+    monkeypatch.setenv("FORTIOS_INSTANCES_FILE", _write_fleet(tmp_path))
+    try:
+        importlib.reload(server)
+        instructions = server.mcp.instructions or ""
+
+        assert "hq-fw" in instructions
+        assert "dc-edge" in instructions
+        assert "`instance` is required" in instructions
+    finally:
+        # Restore module state so the reloaded, populated-fleet `mcp` object
+        # does not leak into other tests: clear the env this test set, then
+        # reload again so `server.mcp` goes back to reflecting an empty
+        # fleet, matching how every other test in this suite expects to find
+        # it.
+        monkeypatch.delenv("FORTIOS_INSTANCES_FILE", raising=False)
+        importlib.reload(server)

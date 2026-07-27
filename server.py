@@ -10,11 +10,14 @@ Architecture:
 - Async HTTP client with Bearer-token authentication
 
 Configuration (environment variables or .env file):
-    FORTIOS_HOST       — FortiGate URL (e.g. https://192.168.1.1)
-    FORTIOS_API_TOKEN  — API Bearer token
-    FORTIOS_VDOM       — VDOM (default: root)
-    FORTIOS_VERIFY_SSL — true/false (default: false for self-signed)
-    FORTIOS_TIMEOUT    — HTTP timeout in seconds (default: 30)
+    FORTIOS_HOST            — FortiGate URL (e.g. https://192.168.1.1)
+    FORTIOS_API_TOKEN       — API Bearer token
+    FORTIOS_VDOM            — VDOM (default: root)
+    FORTIOS_VERIFY_SSL      — true/false (default: false for self-signed)
+    FORTIOS_TIMEOUT         — HTTP timeout in seconds (default: 30)
+    FORTIOS_INSTANCES_FILE  — path to a JSON array of FortiGate instances to
+                              manage a fleet from one server process, instead
+                              of the single-device variables above
 """
 
 from __future__ import annotations
@@ -154,7 +157,7 @@ security.register(mcp)
 wireless.register(mcp)
 fleet.register(mcp)
 
-logger.info("All 11 tool modules registered (205+ tools).")
+logger.info("All 11 tool modules registered (241 tools).")
 
 
 # ─────────────────────────────────────────────────────────────────────
