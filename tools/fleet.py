@@ -68,9 +68,9 @@ def register(mcp: FastMCP) -> None:
                     entry["error"] = str(result)
                     continue
                 entry["reachable"] = True
-                details = result.get("results") or {}
-                if isinstance(details, dict):
-                    entry["version"] = details.get("version")
-                    entry["serial"] = details.get("serial")
+                # FortiOS puts version/serial at the top level of the monitor
+                # envelope, not inside results (which holds hostname/model).
+                entry["version"] = result.get("version")
+                entry["serial"] = result.get("serial")
 
         return {"count": len(instances), "instances": instances}

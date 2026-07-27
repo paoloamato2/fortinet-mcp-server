@@ -99,7 +99,9 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
         if count is not None:
             params["count"] = count
         if format_fields:
-            params["format"] = format_fields
+            # FortiOS expects pipe-separated fields; commas yield empty objects.
+            fields = [f.strip() for f in format_fields.replace("|", ",").split(",")]
+            params["format"] = "|".join(f for f in fields if f)
         try:
             return await client.cmdb_get(resource_path, params or None, vdom=vdom)
         except FortiOSError as exc:

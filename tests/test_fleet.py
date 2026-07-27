@@ -74,10 +74,17 @@ async def test_health_check_reports_reachable_and_unreachable(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, httpx_mock: HTTPXMock
 ) -> None:
     monkeypatch.setenv("FORTIOS_INSTANCES_FILE", _write_fleet(tmp_path))
+    # Real FortiOS 7.6.x envelope: version/serial/build are top-level keys,
+    # results only carries hostname/model details.
     httpx_mock.add_response(
         url="https://hq.example/api/v2/monitor/system/status?vdom=root",
         json={
-            "results": {"version": "v7.6.6", "serial": "FG-1"},
+            "http_method": "GET",
+            "results": {"model_name": "FortiGate", "hostname": "fw-1"},
+            "status": "success",
+            "serial": "FG-1",
+            "version": "v7.6.6",
+            "build": 3652,
             "http_status": 200,
         },
     )
