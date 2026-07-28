@@ -14,84 +14,46 @@ from pydantic import Field
 
 from fortios_client import FortiOSError
 from instances import FortiOSAPI
+from resources import WirelessResource
 from tool_annotations import CREATES, DESTRUCTIVE, READ_ONLY
 from tool_params import InstanceParam, VdomParam
+from tools._read import read_resource, resource_table_doc
 
 
 def register(mcp: FastMCP) -> None:
     """Register all wireless tools."""
 
-    # ==================================================================
-    # WTP PROFILES (AP Profiles)
-    # ==================================================================
-
-    @mcp.tool(annotations=READ_ONLY)
-    async def wifi_wtp_profile_list(
+    async def wireless_read(
         ctx: Context,
+        resource: Annotated[
+            WirelessResource, Field(description="Which wireless resource to read.")
+        ],
+        name: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Object key to fetch. Omit to list every object. "
+                    "Rejected for singletons and monitor endpoints."
+                ),
+            ),
+        ] = None,
         instance: InstanceParam = None,
         vdom: VdomParam = None,
     ) -> dict[str, Any]:
-        """List all WTP (Wireless Termination Point / AP) profiles."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.cmdb_get("wireless-controller/wtp-profile", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
+        """Placeholder replaced below with the generated resource table."""
+        return await read_resource(ctx, "wireless", resource, name, instance, vdom)
 
-    @mcp.tool(annotations=READ_ONLY)
-    async def wifi_wtp_profile_get(
-        ctx: Context,
-        name: Annotated[str, Field(description="WTP profile name.")],
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """Get a specific AP (WTP) profile configuration."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.cmdb_get(
-                f"wireless-controller/wtp-profile/{name}", vdom=vdom
-            )
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
+    wireless_read.__doc__ = (
+        "Read wireless controller configuration and live AP/client state.\n\n"
+        "Omit `name` to list a resource, or pass it to fetch one object by "
+        "key.\n\n" + resource_table_doc("wireless")
+    )
+    mcp.tool(annotations=READ_ONLY)(wireless_read)
 
     # ==================================================================
     # WTP (Access Points)
     # ==================================================================
-
-    @mcp.tool(annotations=READ_ONLY)
-    async def wifi_wtp_list(
-        ctx: Context,
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """List all registered WTPs (Access Points) with their configuration."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.cmdb_get("wireless-controller/wtp", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool(annotations=READ_ONLY)
-    async def wifi_wtp_get(
-        ctx: Context,
-        wtp_id: Annotated[str, Field(description="WTP (AP) serial number or name.")],
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """Get configuration for a specific WTP (Access Point)."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.cmdb_get(f"wireless-controller/wtp/{wtp_id}", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
 
     # DESTRUCTIVE, not an operational deauth: this is a cmdb_delete that
     # removes the WTP configuration entry.
@@ -116,37 +78,6 @@ def register(mcp: FastMCP) -> None:
     # ==================================================================
     # VAP (Virtual AP / SSID)
     # ==================================================================
-
-    @mcp.tool(annotations=READ_ONLY)
-    async def wifi_vap_list(
-        ctx: Context,
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """List all VAPs (Virtual APs / SSIDs)."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.cmdb_get("wireless-controller/vap", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool(annotations=READ_ONLY)
-    async def wifi_vap_get(
-        ctx: Context,
-        name: Annotated[str, Field(description="VAP (SSID) name.")],
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """Get a specific VAP (SSID) configuration."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.cmdb_get(f"wireless-controller/vap/{name}", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
 
     @mcp.tool(annotations=CREATES)
     async def wifi_vap_create(
@@ -230,112 +161,8 @@ def register(mcp: FastMCP) -> None:
             return {"error": str(exc), "status_code": exc.status_code}
 
     # ==================================================================
-    # VAP GROUPS
-    # ==================================================================
-
-    @mcp.tool(annotations=READ_ONLY)
-    async def wifi_vap_group_list(
-        ctx: Context,
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """List all VAP groups (SSID bundles)."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.cmdb_get("wireless-controller/vap-group", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    # ==================================================================
-    # WIRELESS CONTROLLER GLOBAL
-    # ==================================================================
-
-    @mcp.tool(annotations=READ_ONLY)
-    async def wifi_controller_setting_get(
-        ctx: Context,
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """Get wireless controller global settings."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.cmdb_get("wireless-controller/setting", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool(annotations=READ_ONLY)
-    async def wifi_qos_profile_list(
-        ctx: Context,
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """List all wireless QoS profiles."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.cmdb_get("wireless-controller/qos-profile", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool(annotations=READ_ONLY)
-    async def wifi_rf_analysis_get(
-        ctx: Context,
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """Get wireless RF analysis settings."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.cmdb_get("wireless-controller/rf-analysis", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    # ==================================================================
-    # HOTSPOT 2.0
-    # ==================================================================
-
-    @mcp.tool(annotations=READ_ONLY)
-    async def wifi_hotspot20_profile_list(
-        ctx: Context,
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """List all Hotspot 2.0 (Passpoint) profiles."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.cmdb_get(
-                "wireless-controller.hotspot20/hs-profile", vdom=vdom
-            )
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    # ==================================================================
     # MONITOR: WiFi Status
     # ==================================================================
-
-    @mcp.tool(annotations=READ_ONLY)
-    async def monitor_wifi_managed_ap(
-        ctx: Context,
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """Get detailed status of all managed Access Points (online/offline, channel, clients)."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.monitor_get("wifi/managed_ap", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
 
     @mcp.tool(annotations=READ_ONLY)
     async def monitor_wifi_client_list(
@@ -366,36 +193,6 @@ def register(mcp: FastMCP) -> None:
             return {"error": str(exc), "status_code": exc.status_code}
 
     @mcp.tool(annotations=READ_ONLY)
-    async def monitor_wifi_rogue_ap(
-        ctx: Context,
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """Get list of detected rogue (unauthorized) Access Points."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.monitor_get("wifi/rogue_ap", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool(annotations=READ_ONLY)
-    async def monitor_wifi_spectrum_analysis(
-        ctx: Context,
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """Get RF spectrum analysis data from APs that support it."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.monitor_get("wifi/spectrum", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool(annotations=READ_ONLY)
     async def monitor_wifi_ap_status(
         ctx: Context,
         wtp_id: Annotated[
@@ -417,20 +214,5 @@ def register(mcp: FastMCP) -> None:
             params["wtp_id"] = wtp_id
         try:
             return await client.monitor_get("wifi/ap_status", params or None, vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool(annotations=READ_ONLY)
-    async def monitor_wifi_interfering_ap(
-        ctx: Context,
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """Get list of interfering (neighbor) Access Points detected on RF scan."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.monitor_get("wifi/interfering_ap", vdom=vdom)
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
