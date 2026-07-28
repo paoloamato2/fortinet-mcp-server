@@ -37,6 +37,18 @@ HINT_FIELDS = ("readOnlyHint", "destructiveHint", "idempotentHint", "openWorldHi
 
 TOOLS_DIR = Path(__file__).resolve().parent.parent / "tools"
 
+#: The shared dispatch helper all nine ``<domain>_read`` tools delegate to.
+#: Every one of those tool bodies is a single ``return await
+#: read_resource(...)`` statement -- no ``client.<method>`` call of its own
+#: -- so ``_tool_write_methods`` below, which only walks functions decorated
+#: (or registered) as tools in ``tools/*.py``, never sees what
+#: ``read_resource`` itself does; it registers no tools, so it is never
+#: treated as one. All nine ``*_read`` tools advertise ``readOnlyHint=True``
+#: on the strength of that helper's behaviour, so it is checked directly,
+#: independently of the per-tool AST walk. See
+#: ``test_read_helper_module_reaches_no_write_method`` below.
+READ_HELPER_PATH = TOOLS_DIR / "_read.py"
+
 #: The six ``FortiOSClient`` methods that mutate a FortiGate's stored
 #: configuration or its live session state -- the same six named in
 #: ``fortios_client.py`` and in the design doc's "Enabling constraint".
@@ -114,27 +126,34 @@ def _tool_modules() -> list[Path]:
     return sorted(p for p in TOOLS_DIR.glob("*.py") if p.name != "__init__.py")
 
 
+def _client_write_calls(node: ast.AST) -> set[str]:
+    """The ``WRITE_METHODS`` reached via a ``client.<attr>(...)`` call anywhere
+    inside ``node`` -- a single function or a whole module.
+
+    Every tool (and ``read_resource``, the helper they all delegate to)
+    resolves its client into a local variable literally named ``client``
+    (the convention documented in ``CLAUDE.md``: ``client: FortiOSAPI =
+    ctx.request_context.lifespan_context["registry"].resolve(...)``), so
+    matching ``ast.Attribute`` nodes whose value is the name ``client`` finds
+    every write call reached, including ones nested in an ``if``/``try``
+    branch.
+    """
+    reached: set[str] = set()
+    for sub in ast.walk(node):
+        if not isinstance(sub, ast.Attribute):
+            continue
+        if sub.attr in WRITE_METHODS and (
+            isinstance(sub.value, ast.Name) and sub.value.id == "client"
+        ):
+            reached.add(sub.attr)
+    return reached
+
+
 def _write_methods_reached(
     fn: ast.AsyncFunctionDef | ast.FunctionDef,
 ) -> set[str]:
-    """The ``WRITE_METHODS`` reached via a ``client.<attr>(...)`` call in ``fn``.
-
-    Every tool resolves its client into a local variable literally named
-    ``client`` (the convention documented in ``CLAUDE.md``: ``client:
-    FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(...)``),
-    so matching ``ast.Attribute`` nodes whose value is the name ``client``
-    finds every write call a tool body makes, including ones nested in an
-    ``if``/``try`` branch.
-    """
-    reached: set[str] = set()
-    for node in ast.walk(fn):
-        if not isinstance(node, ast.Attribute):
-            continue
-        if node.attr in WRITE_METHODS and (
-            isinstance(node.value, ast.Name) and node.value.id == "client"
-        ):
-            reached.add(node.attr)
-    return reached
+    """The ``WRITE_METHODS`` reached via a ``client.<attr>(...)`` call in ``fn``."""
+    return _client_write_calls(fn)
 
 
 def _tool_write_methods() -> dict[str, set[str]]:
@@ -404,6 +423,40 @@ def test_the_ast_walk_covers_every_registered_tool() -> None:
     by_name = _tool_write_methods()
     assert len(by_name) == EXPECTED_TOOL_COUNT, (
         f"AST walk found {len(by_name)} tools, expected {EXPECTED_TOOL_COUNT}"
+    )
+
+
+def test_read_helper_module_reaches_no_write_method() -> None:
+    """Closes the blind spot ``_tool_write_methods`` cannot see.
+
+    ``_tool_write_methods`` only walks functions in ``tools/*.py`` that are
+    registered as tools -- decorated with ``@mcp.tool(...)`` or passed to an
+    explicit ``mcp.tool(...)(name)`` call. Every ``*_read`` tool's body is
+    ``return await read_resource(ctx, ...)``: no ``client.<method>`` call of
+    its own, so that walk finds an empty write-method set for e.g.
+    ``system_read``. ``tools/_read.py`` registers no tools of its own
+    either, so the walk never looks inside it -- the module holding the
+    actual dispatch, and the one place a write call would have to appear for
+    any of the nine ``*_read`` tools to stop being read-only, is invisible
+    to every other guard in this file.
+
+    All nine ``*_read`` tools advertise ``readOnlyHint=True`` on the
+    strength of ``read_resource``'s current body only ever calling
+    ``client.cmdb_get``/``client.monitor_get``. If ``read_resource`` ever
+    grew a branch reaching a write method -- e.g. an ``api == "action"`` case
+    dispatching ``monitor_post`` -- this is the only test that would catch
+    it; ``test_reaching_a_write_method_forbids_a_read_only_hint`` below
+    re-derives its write surface from ``tools/*.py``'s registered functions,
+    which is exactly the derivation that misses this helper.
+    """
+    reached = _client_write_calls(
+        ast.parse(READ_HELPER_PATH.read_text(encoding="utf-8"))
+    )
+    assert reached == set(), (
+        f"tools/_read.py reaches write method(s) {sorted(reached)}, but every "
+        f"*_read tool that delegates to read_resource() advertises "
+        f"readOnlyHint=True; either the helper must stop reaching a write "
+        f"method or every *_read tool's category must be reviewed"
     )
 
 

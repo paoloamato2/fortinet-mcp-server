@@ -45,7 +45,12 @@ def register(mcp: FastMCP) -> None:
     firewall_read.__doc__ = (
         "Read firewall objects, policies and live firewall state.\n\n"
         "Omit `name` to list a resource, or pass it to fetch one object by "
-        "key.\n\n" + resource_table_doc("firewall")
+        "key.\n\n"
+        "IPv4 policies and addresses are not in this table -- their "
+        "`_list`/`_get` tools carry real filter logic and were kept "
+        "separately. Use `firewall_policy_list`/`firewall_policy_get` for "
+        "IPv4 policies and `firewall_address_list`/`firewall_address_get` "
+        "for IPv4 addresses.\n\n" + resource_table_doc("firewall")
     )
     mcp.tool(annotations=READ_ONLY)(firewall_read)
 

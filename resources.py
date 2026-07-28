@@ -27,6 +27,16 @@ class Resource(NamedTuple):
     path: str
     summary: str
     keyed: bool = False
+    # Extra query parameters every request for this row must carry. A tuple
+    # of (key, value) pairs, not a dict: NamedTuple fields must stay
+    # hashable, and a mutable dict default would be one shared object
+    # aliased across every row that omits it. Empty for every row except
+    # monitor/fortiview_top_threat_map, whose three surviving siblings
+    # (monitor_fortiview_top_sources/destinations/applications) hit the
+    # identical fortiview/statistics path and are distinguished only by
+    # the "type" query parameter -- without it here, this row would issue
+    # the wrong request while advertising the right description.
+    params: tuple[tuple[str, str], ...] = ()
 
 
 SINGLETON_PATHS: frozenset[str] = frozenset(
@@ -349,6 +359,7 @@ READ_RESOURCES: dict[str, dict[str, Resource]] = {
             "fortiview/statistics",
             "Get FortiView threat map data (geo-blocking source countries).",
             keyed=False,
+            params=(("type", "threat"),),
         ),
         "ips_anomaly": Resource(
             "monitor",
@@ -460,6 +471,13 @@ READ_RESOURCES: dict[str, dict[str, Resource]] = {
             "List all route-maps (used for route filtering and attribute modification).",
             keyed=True,
         ),
+        # FortiOS 7.6 (this server's target) always exposes SD-WAN config at
+        # system/sdwan. The replaced tool, router_sdwan_get, tried
+        # system/virtual-wan-link first (the pre-6.4 path) and fell back to
+        # system/sdwan; this row keeps only the 7.6 path, so a pre-6.4
+        # device silently loses that fallback -- a deliberate, documented
+        # narrowing, not a regression to fix. cmdb_list still reaches
+        # system/virtual-wan-link directly if ever needed.
         "sdwan": Resource(
             "cmdb",
             "system/sdwan",

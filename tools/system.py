@@ -45,7 +45,11 @@ def register(mcp: FastMCP) -> None:
     system_read.__doc__ = (
         "Read system configuration and device health.\n\n"
         "Omit `name` to list a resource, or pass it to fetch one object by "
-        "key.\n\n" + resource_table_doc("system")
+        "key.\n\n"
+        "Network interfaces are not in this table -- their `_list`/`_get` "
+        "tools carry real filter logic and were kept separately. Use "
+        "`system_interface_list`/`system_interface_get` for network "
+        "interfaces.\n\n" + resource_table_doc("system")
     )
     mcp.tool(annotations=READ_ONLY)(system_read)
 

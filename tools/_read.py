@@ -67,12 +67,13 @@ async def read_resource(
         return {"error": (f"resource {resource!r} is {reason}; omit name to read it.")}
 
     path = f"{row.path}/{name}" if name is not None else row.path
+    params = dict(row.params) if row.params else None
     client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
         instance
     )
     try:
         if row.api == "cmdb":
-            return await client.cmdb_get(path, vdom=vdom)
-        return await client.monitor_get(path, vdom=vdom)
+            return await client.cmdb_get(path, params, vdom=vdom)
+        return await client.monitor_get(path, params, vdom=vdom)
     except FortiOSError as exc:
         return {"error": str(exc), "status_code": exc.status_code}

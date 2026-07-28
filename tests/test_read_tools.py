@@ -21,7 +21,7 @@ class FakeClient:
     """Records the calls a tool makes instead of reaching a FortiGate."""
 
     def __init__(self, raises: FortiOSError | None = None) -> None:
-        self.calls: list[tuple[str, str, str | None]] = []
+        self.calls: list[tuple[str, str, dict[str, Any] | None, str | None]] = []
         self._raises = raises
 
     async def cmdb_get(
@@ -30,7 +30,7 @@ class FakeClient:
         params: dict[str, Any] | None = None,
         vdom: str | None = None,
     ) -> dict[str, Any]:
-        self.calls.append(("cmdb_get", path, vdom))
+        self.calls.append(("cmdb_get", path, params, vdom))
         if self._raises:
             raise self._raises
         return {"results": [], "path": path}
@@ -41,7 +41,7 @@ class FakeClient:
         params: dict[str, Any] | None = None,
         vdom: str | None = None,
     ) -> dict[str, Any]:
-        self.calls.append(("monitor_get", path, vdom))
+        self.calls.append(("monitor_get", path, params, vdom))
         if self._raises:
             raise self._raises
         return {"results": [], "path": path}
@@ -77,26 +77,41 @@ def _ctx(client: FakeClient) -> Context:
 async def test_list_read_builds_the_bare_path() -> None:
     client = FakeClient()
     result = await read_resource(_ctx(client), "user", "local", None, None, None)
-    assert client.calls == [("cmdb_get", "user/local", None)]
+    assert client.calls == [("cmdb_get", "user/local", None, None)]
     assert "error" not in result
 
 
 async def test_keyed_read_appends_the_name() -> None:
     client = FakeClient()
     await read_resource(_ctx(client), "user", "local", "alice", None, None)
-    assert client.calls == [("cmdb_get", "user/local/alice", None)]
+    assert client.calls == [("cmdb_get", "user/local/alice", None, None)]
 
 
 async def test_monitor_resource_dispatches_to_monitor_get() -> None:
     client = FakeClient()
     await read_resource(_ctx(client), "user", "fortitoken", None, None, None)
-    assert client.calls == [("monitor_get", "user/fortitoken", None)]
+    assert client.calls == [("monitor_get", "user/fortitoken", None, None)]
 
 
 async def test_vdom_is_passed_through() -> None:
     client = FakeClient()
     await read_resource(_ctx(client), "user", "local", None, None, "root")
-    assert client.calls == [("cmdb_get", "user/local", "root")]
+    assert client.calls == [("cmdb_get", "user/local", None, "root")]
+
+
+async def test_fortiview_threat_map_sends_its_type_param() -> None:
+    """monitor/fortiview_top_threat_map shares a path with three surviving
+    siblings (monitor_fortiview_top_sources/destinations/applications) and
+    is distinguished from them only by the ``type`` query parameter -- drop
+    it and the row silently returns the wrong FortiView data.
+    """
+    client = FakeClient()
+    await read_resource(
+        _ctx(client), "monitor", "fortiview_top_threat_map", None, None, None
+    )
+    assert client.calls == [
+        ("monitor_get", "fortiview/statistics", {"type": "threat"}, None)
+    ]
 
 
 async def test_name_on_a_singleton_is_refused_without_calling_the_device() -> None:
