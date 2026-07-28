@@ -10,6 +10,8 @@ import pytest
 from mcp.shared.memory import create_connected_server_and_client_session
 from pytest_httpx import HTTPXMock
 
+from paging import PAGE_ROWS
+
 
 @pytest.fixture
 def fleet(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -50,7 +52,10 @@ async def test_named_instance_is_the_only_one_contacted(
     fleet: None, httpx_mock: HTTPXMock
 ) -> None:
     httpx_mock.add_response(
-        url="https://dc.example/api/v2/cmdb/firewall/policy?vdom=root",
+        url=(
+            "https://dc.example/api/v2/cmdb/firewall/policy"
+            f"?vdom=root&start=0&count={PAGE_ROWS + 1}"
+        ),
         json={"results": [{"policyid": 2}], "http_status": 200},
     )
 
@@ -89,11 +94,17 @@ async def test_star_fans_out_and_keys_results_by_instance(
     fleet: None, httpx_mock: HTTPXMock
 ) -> None:
     httpx_mock.add_response(
-        url="https://hq.example/api/v2/cmdb/firewall/policy?vdom=root",
+        url=(
+            "https://hq.example/api/v2/cmdb/firewall/policy"
+            f"?vdom=root&start=0&count={PAGE_ROWS + 1}"
+        ),
         json={"results": [{"policyid": 1}], "http_status": 200},
     )
     httpx_mock.add_response(
-        url="https://dc.example/api/v2/cmdb/firewall/policy?vdom=root",
+        url=(
+            "https://dc.example/api/v2/cmdb/firewall/policy"
+            f"?vdom=root&start=0&count={PAGE_ROWS + 1}"
+        ),
         json={"results": [{"policyid": 2}], "http_status": 200},
     )
 
@@ -133,7 +144,10 @@ async def test_single_instance_config_allows_omitting_instance(
     monkeypatch.setenv("FORTIOS_HOST", "https://only.example")
     monkeypatch.setenv("FORTIOS_API_TOKEN", "t")
     httpx_mock.add_response(
-        url="https://only.example/api/v2/cmdb/firewall/policy?vdom=root",
+        url=(
+            "https://only.example/api/v2/cmdb/firewall/policy"
+            f"?vdom=root&start=0&count={PAGE_ROWS + 1}"
+        ),
         json={"results": [], "http_status": 200},
     )
 

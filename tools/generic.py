@@ -15,9 +15,10 @@ from pydantic import Field
 
 from fortios_client import FortiOSError
 from instances import FortiOSAPI
+from paging import PageError, normalise, page_query, paginate
 from resources import DELETE_RESOURCES, DeletableResource
 from tool_annotations import CREATES, DESTRUCTIVE, READ_ONLY, UNCONSTRAINED
-from tool_params import InstanceParam, VdomParam
+from tool_params import CountParam, InstanceParam, StartParam, VdomParam
 
 
 def register(mcp: FastMCP) -> None:  # noqa: C901
@@ -52,14 +53,6 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
                 ),
             ),
         ] = None,
-        start: Annotated[
-            int | None,
-            Field(default=None, description="Pagination offset (0-based)."),
-        ] = None,
-        count: Annotated[
-            int | None,
-            Field(default=None, description="Maximum number of results to return."),
-        ] = None,
         format_fields: Annotated[
             str | None,
             Field(
@@ -67,13 +60,16 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
                 description="Comma-separated list of fields to return. Reduces response size.",
             ),
         ] = None,
+        start: StartParam = None,
+        count: CountParam = None,
         instance: InstanceParam = None,
         vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """List all objects of a CMDB resource type.
 
-        Covers any GET on /api/v2/cmdb/{resource_path}.
-        Returns the full FortiOS JSON response including results array and metadata.
+        Covers any GET on /api/v2/cmdb/{resource_path}. Returns one bounded
+        page of the FortiOS JSON response; see `_page` for how to fetch the
+        rest.
         """
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
             instance
@@ -81,19 +77,21 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
         params: dict[str, Any] = {}
         if filters:
             params["filter"] = filters
-        if start is not None:
-            params["start"] = start
-        if count is not None:
-            params["count"] = count
         if format_fields:
             # FortiOS expects pipe-separated fields; commas yield empty objects.
             fields = [f.strip() for f in format_fields.replace("|", ",").split(",")]
             params["format"] = "|".join(f for f in fields if f)
         try:
-            return await client.cmdb_get(resource_path, params or None, vdom=vdom)
+            page_start, page_count = normalise(start, count)
+        except PageError as exc:
+            return {"error": str(exc)}
+        params.update(page_query(page_start, page_count))
+        try:
+            payload = await client.cmdb_get(resource_path, params, vdom=vdom)
         except FortiOSError as exc:
             await ctx.error(f"cmdb_list error: {exc}")
             return {"error": str(exc), "status_code": exc.status_code}
+        return paginate(payload, page_start, page_count)
 
     @mcp.tool(annotations=READ_ONLY)
     async def cmdb_get(
@@ -297,27 +295,41 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
                 ),
             ),
         ] = None,
+        start: StartParam = None,
+        count: CountParam = None,
         instance: InstanceParam = None,
         vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Retrieve real-time operational data from any monitor endpoint.
 
-        Covers any GET on /api/v2/monitor/{monitor_path}.
+        Covers any GET on /api/v2/monitor/{monitor_path}. Returns one bounded
+        page; see `_page` for how to fetch the rest. An explicit `start`/
+        `count` wins over a same-named key inside `extra_params`.
         """
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
             instance
         )
-        params: dict[str, Any] | None = None
+        parsed_extra: dict[str, Any] = {}
         if extra_params:
             try:
-                params = json.loads(extra_params)
+                parsed_extra = json.loads(extra_params)
             except json.JSONDecodeError as exc:
                 return {"error": f"Invalid JSON in extra_params: {exc}"}
+            if not isinstance(parsed_extra, dict):
+                return {"error": "extra_params must be a JSON object"}
+        effective_start = start if start is not None else parsed_extra.get("start")
+        effective_count = count if count is not None else parsed_extra.get("count")
         try:
-            return await client.monitor_get(monitor_path, params, vdom=vdom)
+            page_start, page_count = normalise(effective_start, effective_count)
+        except PageError as exc:
+            return {"error": str(exc)}
+        params = {**parsed_extra, **page_query(page_start, page_count)}
+        try:
+            payload = await client.monitor_get(monitor_path, params, vdom=vdom)
         except FortiOSError as exc:
             await ctx.error(f"monitor_get error: {exc}")
             return {"error": str(exc), "status_code": exc.status_code}
+        return paginate(payload, page_start, page_count)
 
     @mcp.tool(annotations=UNCONSTRAINED)
     async def monitor_action(
