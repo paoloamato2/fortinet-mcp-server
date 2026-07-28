@@ -117,15 +117,30 @@ class FortiOSClient:
     def _check_response(self, resp: httpx.Response) -> dict[str, Any]:
         """Parse and validate a FortiOS JSON response."""
         try:
-            body: dict[str, Any] = resp.json()
+            body: Any = resp.json()
         except Exception as exc:
             raise FortiOSError(
                 f"Non-JSON response (HTTP {resp.status_code}): {resp.text[:300]}",
                 resp.status_code,
             ) from exc
 
-        http_status: int = body.get("http_status", resp.status_code)
-        if resp.status_code >= 400 or http_status >= 400:
+        # A ``vdom="*"`` query is the one case where FortiOS answers with a
+        # JSON array -- one envelope per VDOM -- instead of a single object.
+        # Collapse it to {vdom: envelope}, the shape FanOutClient already
+        # returns for instance="*", so both kinds of fan-out read alike.
+        if isinstance(body, list) and resp.status_code < 400:
+            return self._merge_vdom_envelopes(body, resp.status_code)
+
+        return self._check_envelope(
+            body if isinstance(body, dict) else {}, resp.status_code
+        )
+
+    def _check_envelope(
+        self, body: dict[str, Any], transport_status: int
+    ) -> dict[str, Any]:
+        """Raise :class:`FortiOSError` if one FortiOS envelope reports failure."""
+        http_status: int = body.get("http_status", transport_status)
+        if transport_status >= 400 or http_status >= 400:
             status_msg = body.get("status", "error")
             error_msg = body.get("cli_error", body.get("http_method", str(body)))
             raise FortiOSError(
@@ -134,6 +149,31 @@ class FortiOSClient:
                 body,
             )
         return body
+
+    def _merge_vdom_envelopes(
+        self, envelopes: list[Any], transport_status: int
+    ) -> dict[str, Any]:
+        """Key each per-VDOM envelope by its VDOM name.
+
+        One VDOM failing contributes the standard ``{"error": ...,
+        "status_code": ...}`` payload in its own slot rather than failing the
+        whole query, matching how ``FanOutClient`` treats one unreachable
+        instance.
+        """
+        merged: dict[str, Any] = {}
+        for index, envelope in enumerate(envelopes):
+            if not isinstance(envelope, dict):
+                merged[f"vdom[{index}]"] = {
+                    "error": f"Unexpected non-object entry: {envelope!r}"[:300],
+                    "status_code": 0,
+                }
+                continue
+            key = str(envelope.get("vdom") or f"vdom[{index}]")
+            try:
+                merged[key] = self._check_envelope(envelope, transport_status)
+            except FortiOSError as exc:
+                merged[key] = {"error": str(exc), "status_code": exc.status_code}
+        return merged
 
     # ------------------------------------------------------------------
     # CMDB  (/api/v2/cmdb/…)
