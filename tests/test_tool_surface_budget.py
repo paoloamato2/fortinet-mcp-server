@@ -15,6 +15,12 @@ this number needs to be re-examined rather than nudged.
 ``SURFACE_CEILING_CHARS`` only ever moves down. Raising it is the signal that
 a change made the server more expensive for every client on every request,
 which is a decision that belongs in review rather than in a passing test.
+
+Raised once, 104,000 -> 106,000, on 2026-07-28: paging added ``start``/``count``
+to twelve read tools at a measured cost of 2,820 characters. That buys a bound
+on responses that reached 1,274,739 characters -- 12x this entire surface --
+so the trade was reviewed and accepted rather than worked around. See
+docs/superpowers/specs/2026-07-28-read-paging-design.md.
 """
 
 from __future__ import annotations
@@ -25,7 +31,7 @@ from server import mcp
 
 #: Measured ceiling. Lower this whenever a change shrinks the surface; never
 #: raise it without recording why in the commit message.
-SURFACE_CEILING_CHARS = 104_000
+SURFACE_CEILING_CHARS = 106_000
 
 
 async def _tool_payloads() -> list[dict[str, object]]:
