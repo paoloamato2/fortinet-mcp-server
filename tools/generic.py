@@ -15,6 +15,7 @@ from pydantic import Field
 
 from fortios_client import FortiOSError
 from instances import FortiOSAPI
+from resources import DELETE_RESOURCES, DeletableResource
 from tool_annotations import CREATES, DESTRUCTIVE, READ_ONLY, UNCONSTRAINED
 from tool_params import InstanceParam, VdomParam
 
@@ -233,6 +234,41 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
         except FortiOSError as exc:
             await ctx.error(f"cmdb_delete error: {exc}")
             return {"error": str(exc), "status_code": exc.status_code}
+
+    async def fortios_delete(
+        ctx: Context,
+        resource: Annotated[
+            DeletableResource,
+            Field(description="Which kind of object to delete."),
+        ],
+        name: Annotated[str, Field(description="Key of the object to delete.")],
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
+    ) -> dict[str, Any]:
+        """Placeholder replaced below with the generated resource table."""
+        row = DELETE_RESOURCES.get(resource)
+        if row is None:
+            known = ", ".join(sorted(DELETE_RESOURCES))
+            return {"error": f"unknown resource {resource!r}. Known: {known}"}
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
+        try:
+            return await client.cmdb_delete(f"{row.path}/{name}", vdom=vdom)
+        except FortiOSError as exc:
+            return {"error": str(exc), "status_code": exc.status_code}
+
+    fortios_delete.__doc__ = (
+        "Delete a configuration object from a FortiGate.\n\n"
+        "`resource` is restricted to the object types this server supports "
+        "deleting, so this tool cannot be aimed at an arbitrary API path. "
+        "Deletions are not reversible — confirm with the user first.\n\n"
+        + "\n".join(
+            f"- `{value}` — {DELETE_RESOURCES[value].summary}"
+            for value in sorted(DELETE_RESOURCES)
+        )
+    )
+    mcp.tool(annotations=DESTRUCTIVE)(fortios_delete)
 
     # ------------------------------------------------------------------
     # Monitor generic tools  (/api/v2/monitor/…)

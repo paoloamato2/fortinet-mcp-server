@@ -16,7 +16,7 @@ from pydantic import Field
 from fortios_client import FortiOSError
 from instances import FortiOSAPI
 from resources import SecurityResource
-from tool_annotations import CREATES, DESTRUCTIVE, READ_ONLY
+from tool_annotations import CREATES, READ_ONLY
 from tool_params import InstanceParam, VdomParam
 from tools._read import read_resource, resource_table_doc
 
@@ -86,22 +86,6 @@ def register(mcp: FastMCP) -> None:
             body["comment"] = comment
         try:
             return await client.cmdb_post("ips/sensor", body, vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool(annotations=DESTRUCTIVE)
-    async def ips_sensor_delete(
-        ctx: Context,
-        name: Annotated[str, Field(description="IPS sensor name to delete.")],
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """Delete an IPS sensor profile."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.cmdb_delete(f"ips/sensor/{name}", vdom=vdom)
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 

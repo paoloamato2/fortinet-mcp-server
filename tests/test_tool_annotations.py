@@ -64,7 +64,7 @@ POSTS_WITHOUT_MUTATING = {"monitor_network_ping"}
 #: Registered tool count. Two contracts below assert against it, so the
 #: collapse moves this one line per task rather than hunting literals:
 #: 241 -> 232 (user_read) -> 105 (the other eight) -> 91 (fortios_delete).
-EXPECTED_TOOL_COUNT = 105
+EXPECTED_TOOL_COUNT = 91
 
 
 def _tool_functions(path: Path) -> list[ast.AsyncFunctionDef | ast.FunctionDef]:
@@ -154,23 +154,20 @@ def _tool_write_methods() -> dict[str, set[str]]:
 EXPECTED_MUTATING: dict[str, Any] = {
     # firewall.py
     "firewall_address_create": CREATES,
-    "firewall_address_delete": DESTRUCTIVE,
     "firewall_address_update": DESTRUCTIVE,
     "firewall_addrgrp_create": CREATES,
-    "firewall_addrgrp_delete": DESTRUCTIVE,
     "firewall_ippool_create": CREATES,
     "firewall_policy_create": CREATES,
-    "firewall_policy_delete": DESTRUCTIVE,
     "firewall_policy_move": DESTRUCTIVE,
     "firewall_policy_update": DESTRUCTIVE,
     "firewall_service_create": CREATES,
     "firewall_vip_create": CREATES,
-    "firewall_vip_delete": DESTRUCTIVE,
     "monitor_firewall_session_close": DESTRUCTIVE,
     # generic.py
     "cmdb_create": CREATES,
     "cmdb_delete": DESTRUCTIVE,
     "cmdb_update": DESTRUCTIVE,
+    "fortios_delete": DESTRUCTIVE,
     "monitor_action": UNCONSTRAINED,
     "service_call": UNCONSTRAINED,
     # log.py
@@ -178,29 +175,23 @@ EXPECTED_MUTATING: dict[str, Any] = {
     # router.py
     "router_bgp_update": DESTRUCTIVE,
     "router_static_create": CREATES,
-    "router_static_delete": DESTRUCTIVE,
     "router_static_update": DESTRUCTIVE,
     # security.py
     "antivirus_profile_create": CREATES,
     "ips_sensor_create": CREATES,
-    "ips_sensor_delete": DESTRUCTIVE,
     # system.py
     "system_admin_create": CREATES,
-    "system_admin_delete": DESTRUCTIVE,
     "system_dhcp_server_create": CREATES,
     "system_dns_update": DESTRUCTIVE,
     "system_global_update": DESTRUCTIVE,
     "system_interface_create": CREATES,
-    "system_interface_delete": DESTRUCTIVE,
     "system_interface_update": DESTRUCTIVE,
     "system_ntp_update": DESTRUCTIVE,
     # user.py
     "monitor_user_disconnect": DESTRUCTIVE,
     "user_group_create": CREATES,
-    "user_group_delete": DESTRUCTIVE,
     "user_ldap_create": CREATES,
     "user_local_create": CREATES,
-    "user_local_delete": DESTRUCTIVE,
     "user_local_update": DESTRUCTIVE,
     "user_radius_create": CREATES,
     # vpn.py
@@ -208,17 +199,12 @@ EXPECTED_MUTATING: dict[str, Any] = {
     "monitor_vpn_ipsec_tunnel_up": UPDATES,
     "monitor_vpn_ssl_delete_user": DESTRUCTIVE,
     "vpn_ipsec_phase1_create": CREATES,
-    "vpn_ipsec_phase1_delete": DESTRUCTIVE,
     "vpn_ipsec_phase1_update": DESTRUCTIVE,
     "vpn_ipsec_phase2_create": CREATES,
-    "vpn_ipsec_phase2_delete": DESTRUCTIVE,
     "vpn_ssl_portal_create": CREATES,
-    "vpn_ssl_portal_delete": DESTRUCTIVE,
     "vpn_ssl_settings_update": DESTRUCTIVE,
     # wireless.py
     "wifi_vap_create": CREATES,
-    "wifi_vap_delete": DESTRUCTIVE,
-    "wifi_wtp_deauthorize": DESTRUCTIVE,
 }
 
 
@@ -313,8 +299,8 @@ def test_the_frozen_list_covers_the_whole_write_surface(
     assert len(tools) == EXPECTED_TOOL_COUNT, (
         f"registered {len(tools)} tools, expected {EXPECTED_TOOL_COUNT}"
     )
-    assert len(EXPECTED_MUTATING) == 58, (
-        f"EXPECTED_MUTATING holds {len(EXPECTED_MUTATING)} names, expected 58"
+    assert len(EXPECTED_MUTATING) == 44, (
+        f"EXPECTED_MUTATING holds {len(EXPECTED_MUTATING)} names, expected 44"
     )
 
 

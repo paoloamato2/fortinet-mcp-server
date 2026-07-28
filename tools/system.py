@@ -262,22 +262,6 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool(annotations=DESTRUCTIVE)
-    async def system_interface_delete(
-        ctx: Context,
-        name: Annotated[str, Field(description="Interface name to delete.")],
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """Delete a network interface."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.cmdb_delete(f"system/interface/{name}", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
     # ------------------------------------------------------------------
     # DNS
     # ------------------------------------------------------------------
@@ -404,24 +388,6 @@ def register(mcp: FastMCP) -> None:
             body["trusthost1"] = trusthost1
         try:
             return await client.cmdb_post("system/admin", body, vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool(annotations=DESTRUCTIVE)
-    async def system_admin_delete(
-        ctx: Context,
-        name: Annotated[
-            str, Field(description="Administrator account name to delete.")
-        ],
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """Delete an administrator account."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.cmdb_delete(f"system/admin/{name}", vdom=vdom)
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 

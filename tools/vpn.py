@@ -163,24 +163,6 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool(annotations=DESTRUCTIVE)
-    async def vpn_ipsec_phase1_delete(
-        ctx: Context,
-        name: Annotated[str, Field(description="Phase 1 tunnel name to delete.")],
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """Delete an IPsec Phase 1 tunnel interface."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.cmdb_delete(
-                f"vpn.ipsec/phase1-interface/{name}", vdom=vdom
-            )
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
     # ==================================================================
     # IPsec VPN — Phase 2
     # ==================================================================
@@ -256,24 +238,6 @@ def register(mcp: FastMCP) -> None:
             body["comments"] = comments
         try:
             return await client.cmdb_post("vpn.ipsec/phase2-interface", body, vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool(annotations=DESTRUCTIVE)
-    async def vpn_ipsec_phase2_delete(
-        ctx: Context,
-        name: Annotated[str, Field(description="Phase 2 selector name to delete.")],
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """Delete an IPsec Phase 2 selector."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.cmdb_delete(
-                f"vpn.ipsec/phase2-interface/{name}", vdom=vdom
-            )
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
@@ -386,22 +350,6 @@ def register(mcp: FastMCP) -> None:
             body["heading"] = heading
         try:
             return await client.cmdb_post("vpn.ssl.web/portal", body, vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool(annotations=DESTRUCTIVE)
-    async def vpn_ssl_portal_delete(
-        ctx: Context,
-        name: Annotated[str, Field(description="SSL VPN portal name to delete.")],
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """Delete an SSL VPN portal."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.cmdb_delete(f"vpn.ssl.web/portal/{name}", vdom=vdom)
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 

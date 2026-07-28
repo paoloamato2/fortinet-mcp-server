@@ -15,7 +15,7 @@ from pydantic import Field
 from fortios_client import FortiOSError
 from instances import FortiOSAPI
 from resources import WirelessResource
-from tool_annotations import CREATES, DESTRUCTIVE, READ_ONLY
+from tool_annotations import CREATES, READ_ONLY
 from tool_params import InstanceParam, VdomParam
 from tools._read import read_resource, resource_table_doc
 
@@ -54,26 +54,6 @@ def register(mcp: FastMCP) -> None:
     # ==================================================================
     # WTP (Access Points)
     # ==================================================================
-
-    # DESTRUCTIVE, not an operational deauth: this is a cmdb_delete that
-    # removes the WTP configuration entry.
-    @mcp.tool(annotations=DESTRUCTIVE)
-    async def wifi_wtp_deauthorize(
-        ctx: Context,
-        wtp_id: Annotated[str, Field(description="WTP serial number to deauthorize.")],
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """Deauthorize (remove) a WTP (Access Point) from the controller."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.cmdb_delete(
-                f"wireless-controller/wtp/{wtp_id}", vdom=vdom
-            )
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
 
     # ==================================================================
     # VAP (Virtual AP / SSID)
@@ -139,24 +119,6 @@ def register(mcp: FastMCP) -> None:
             body["vdom"] = vdom
         try:
             return await client.cmdb_post("wireless-controller/vap", body, vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool(annotations=DESTRUCTIVE)
-    async def wifi_vap_delete(
-        ctx: Context,
-        name: Annotated[str, Field(description="VAP (SSID) name to delete.")],
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """Delete a VAP (SSID) wireless network."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.cmdb_delete(
-                f"wireless-controller/vap/{name}", vdom=vdom
-            )
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 

@@ -234,22 +234,6 @@ def register(mcp: FastMCP) -> None:
             return {"error": str(exc), "status_code": exc.status_code}
 
     @mcp.tool(annotations=DESTRUCTIVE)
-    async def firewall_policy_delete(
-        ctx: Context,
-        policy_id: Annotated[int, Field(description="Firewall policy ID to delete.")],
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """Delete an IPv4 firewall policy."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.cmdb_delete(f"firewall/policy/{policy_id}", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool(annotations=DESTRUCTIVE)
     async def firewall_policy_move(
         ctx: Context,
         policy_id: Annotated[int, Field(description="Policy ID to move.")],
@@ -423,22 +407,6 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool(annotations=DESTRUCTIVE)
-    async def firewall_address_delete(
-        ctx: Context,
-        name: Annotated[str, Field(description="Address object name to delete.")],
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """Delete an IPv4 firewall address object."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.cmdb_delete(f"firewall/address/{name}", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
     # ==================================================================
     # ADDRESS GROUPS
     # ==================================================================
@@ -471,22 +439,6 @@ def register(mcp: FastMCP) -> None:
             body["comment"] = comment
         try:
             return await client.cmdb_post("firewall/addrgrp", body, vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool(annotations=DESTRUCTIVE)
-    async def firewall_addrgrp_delete(
-        ctx: Context,
-        name: Annotated[str, Field(description="Address group name to delete.")],
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """Delete an IPv4 address group."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.cmdb_delete(f"firewall/addrgrp/{name}", vdom=vdom)
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
@@ -600,22 +552,6 @@ def register(mcp: FastMCP) -> None:
             body["comment"] = comment
         try:
             return await client.cmdb_post("firewall/vip", body, vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool(annotations=DESTRUCTIVE)
-    async def firewall_vip_delete(
-        ctx: Context,
-        name: Annotated[str, Field(description="VIP name to delete.")],
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """Delete a Virtual IP object."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.cmdb_delete(f"firewall/vip/{name}", vdom=vdom)
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 

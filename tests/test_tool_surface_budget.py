@@ -18,7 +18,7 @@ from server import mcp
 
 #: Measured ceiling. Lower this whenever a change shrinks the surface; never
 #: raise it without recording why in the commit message.
-SURFACE_CEILING_CHARS = 109_700
+SURFACE_CEILING_CHARS = 102_400
 
 
 async def _tool_payloads() -> list[dict[str, object]]:
