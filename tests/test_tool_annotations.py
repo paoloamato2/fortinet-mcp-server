@@ -61,6 +61,11 @@ WRITE_METHODS = frozenset(
 #: so a second exemption cannot be added without review.
 POSTS_WITHOUT_MUTATING = {"monitor_network_ping"}
 
+#: Registered tool count. Two contracts below assert against it, so the
+#: collapse moves this one line per task rather than hunting literals:
+#: 241 -> 232 (user_read) -> 105 (the other eight) -> 91 (fortios_delete).
+EXPECTED_TOOL_COUNT = 241
+
 
 def _tool_functions(path: Path) -> list[ast.AsyncFunctionDef | ast.FunctionDef]:
     """Every function in ``path`` decorated with ``@mcp.tool(...)``.
@@ -278,7 +283,9 @@ def test_the_frozen_list_covers_the_whole_write_surface(
     registered, so pin the total. ``tests/test_tools_have_instance_param.py``
     pins the same 241 by AST; this pins it at the registry.
     """
-    assert len(tools) == 241, f"registered {len(tools)} tools, expected 241"
+    assert len(tools) == EXPECTED_TOOL_COUNT, (
+        f"registered {len(tools)} tools, expected {EXPECTED_TOOL_COUNT}"
+    )
     assert len(EXPECTED_MUTATING) == 58, (
         f"EXPECTED_MUTATING holds {len(EXPECTED_MUTATING)} names, expected 58"
     )
@@ -382,7 +389,9 @@ def test_the_ast_walk_covers_every_registered_tool() -> None:
     """Guards the two behaviour-derived tests below against passing
     vacuously because the AST walk matched nothing."""
     by_name = _tool_write_methods()
-    assert len(by_name) == 241, f"AST walk found {len(by_name)} tools, expected 241"
+    assert len(by_name) == EXPECTED_TOOL_COUNT, (
+        f"AST walk found {len(by_name)} tools, expected {EXPECTED_TOOL_COUNT}"
+    )
 
 
 def test_reaching_a_write_method_forbids_a_read_only_hint(
