@@ -109,7 +109,8 @@ def test_no_tool_still_reads_the_legacy_client_key() -> None:
 def test_expected_number_of_tools_is_registered() -> None:
     total = sum(len(_tool_functions(p)) for p in _tool_modules())
 
-    # 231 FortiOS tools + fortigate_list, since the ten user tools user_read
-    # replaced folded into one (see tests/test_tool_annotations.py's
-    # EXPECTED_TOOL_COUNT for the running total across the collapse).
-    assert total == 232
+    # 104 FortiOS tools + fortigate_list, since the collapse folded 145
+    # pure-alias tools into nine `*_read` tools (see
+    # tests/test_tool_annotations.py's EXPECTED_TOOL_COUNT for the running
+    # total across the collapse: 241 -> 232 -> 105 -> 91).
+    assert total == 105

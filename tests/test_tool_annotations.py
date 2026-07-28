@@ -64,7 +64,7 @@ POSTS_WITHOUT_MUTATING = {"monitor_network_ping"}
 #: Registered tool count. Two contracts below assert against it, so the
 #: collapse moves this one line per task rather than hunting literals:
 #: 241 -> 232 (user_read) -> 105 (the other eight) -> 91 (fortios_delete).
-EXPECTED_TOOL_COUNT = 232
+EXPECTED_TOOL_COUNT = 105
 
 
 def _tool_functions(path: Path) -> list[ast.AsyncFunctionDef | ast.FunctionDef]:
