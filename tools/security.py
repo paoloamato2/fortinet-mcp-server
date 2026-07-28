@@ -17,7 +17,7 @@ from fortios_client import FortiOSError
 from instances import FortiOSAPI
 from resources import SecurityResource
 from tool_annotations import CREATES, READ_ONLY
-from tool_params import InstanceParam, VdomParam
+from tool_params import CountParam, InstanceParam, StartParam, VdomParam
 from tools._read import read_resource, resource_table_doc
 
 
@@ -39,11 +39,15 @@ def register(mcp: FastMCP) -> None:
                 ),
             ),
         ] = None,
+        start: StartParam = None,
+        count: CountParam = None,
         instance: InstanceParam = None,
         vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Placeholder replaced below with the generated resource table."""
-        return await read_resource(ctx, "security", resource, name, instance, vdom)
+        return await read_resource(
+            ctx, "security", resource, name, instance, vdom, start, count
+        )
 
     security_read.__doc__ = (
         "Read security profiles: IPS, antivirus, web filter, DLP, WAF, "

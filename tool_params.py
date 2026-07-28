@@ -29,3 +29,16 @@ VdomParam: TypeAlias = Annotated[
     str | None,
     Field(default=None, description="VDOM name; '*'=all VDOMs."),
 ]
+
+#: Row offset when paging a list read.
+StartParam: TypeAlias = Annotated[
+    int | None,
+    Field(default=None, description="Row offset for paging."),
+]
+
+#: Rows wanted. A page is also capped by size, so this is a ceiling rather
+#: than a promise; ``_page.returned`` reports what actually came back.
+CountParam: TypeAlias = Annotated[
+    int | None,
+    Field(default=None, description="Max rows; default 50, also size-capped."),
+]

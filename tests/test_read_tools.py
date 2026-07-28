@@ -76,9 +76,13 @@ def _ctx(client: FakeClient) -> Context:
 
 
 async def test_list_read_builds_the_bare_path() -> None:
+    from paging import PAGE_ROWS
+
     client = FakeClient()
     result = await read_resource(_ctx(client), "user", "local", None, None, None)
-    assert client.calls == [("cmdb_get", "user/local", None, None)]
+    assert client.calls == [
+        ("cmdb_get", "user/local", {"start": 0, "count": PAGE_ROWS + 1}, None)
+    ]
     assert "error" not in result
 
 
@@ -89,50 +93,40 @@ async def test_keyed_read_appends_the_name() -> None:
 
 
 async def test_monitor_resource_dispatches_to_monitor_get() -> None:
+    from paging import PAGE_ROWS
+
     client = FakeClient()
     await read_resource(_ctx(client), "user", "fortitoken", None, None, None)
-    assert client.calls == [("monitor_get", "user/fortitoken", None, None)]
+    assert client.calls == [
+        ("monitor_get", "user/fortitoken", {"start": 0, "count": PAGE_ROWS + 1}, None)
+    ]
 
 
 async def test_vdom_is_passed_through() -> None:
+    from paging import PAGE_ROWS
+
     client = FakeClient()
     await read_resource(_ctx(client), "user", "local", None, None, "root")
-    assert client.calls == [("cmdb_get", "user/local", None, "root")]
+    assert client.calls == [
+        ("cmdb_get", "user/local", {"start": 0, "count": PAGE_ROWS + 1}, "root")
+    ]
 
 
-async def test_a_rows_params_are_sent_with_the_request(
+async def test_a_row_without_params_sends_only_paging(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """``Resource.params`` lets one path serve rows differing only by a query.
+    """A row with no params of its own adds nothing beyond the page query."""
+    from paging import PAGE_ROWS
 
-    No shipped row needs it today -- the one that did,
-    monitor/fortiview_top_threat_map, was removed once live testing on
-    FortiOS 7.6.6 showed its path 404s. The mechanism stays because the next
-    such row will need it, so it keeps its own coverage rather than relying
-    on a production row to exercise it.
-    """
-    client = FakeClient()
-    table = {
-        "demo": {"row": Resource("monitor", "some/path", "Demo.", params=(("k", "v"),))}
-    }
-    monkeypatch.setattr("tools._read.READ_RESOURCES", table)
-
-    await read_resource(_ctx(client), "demo", "row", None, None, None)
-
-    assert client.calls == [("monitor_get", "some/path", {"k": "v"}, None)]
-
-
-async def test_a_row_without_params_sends_none(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """An empty params tuple must not become an empty dict on the wire."""
     client = FakeClient()
     table = {"demo": {"row": Resource("monitor", "some/path", "Demo.")}}
     monkeypatch.setattr("tools._read.READ_RESOURCES", table)
 
     await read_resource(_ctx(client), "demo", "row", None, None, None)
 
-    assert client.calls == [("monitor_get", "some/path", None, None)]
+    assert client.calls == [
+        ("monitor_get", "some/path", {"start": 0, "count": PAGE_ROWS + 1}, None)
+    ]
 
 
 async def test_name_on_a_singleton_is_refused_without_calling_the_device() -> None:
@@ -221,7 +215,74 @@ async def test_read_tool_is_registered_and_read_only(tool_name: str) -> None:
     assert tool.annotations.readOnlyHint is True
     assert tool.annotations.destructiveHint is False
     props = tool.inputSchema["properties"]
-    assert set(props) == {"resource", "name", "instance", "vdom"}
+    assert set(props) == {"resource", "name", "start", "count", "instance", "vdom"}
     assert len(props["resource"]["enum"]) == EXPECTED_ENUM_SIZES[tool_name]
     assert tool.description is not None
     assert "- `" in tool.description, "resource table missing from description"
+
+
+async def test_a_list_read_asks_for_one_extra_row() -> None:
+    """count+1 is how `more` is detected; the default page is PAGE_ROWS."""
+    from paging import PAGE_ROWS
+
+    client = FakeClient()
+    await read_resource(_ctx(client), "user", "local", None, None, None)
+    assert client.calls == [
+        ("cmdb_get", "user/local", {"start": 0, "count": PAGE_ROWS + 1}, None)
+    ]
+
+
+async def test_explicit_start_and_count_are_forwarded() -> None:
+    client = FakeClient()
+    await read_resource(_ctx(client), "user", "local", None, None, None, 100, 5)
+    assert client.calls == [
+        ("cmdb_get", "user/local", {"start": 100, "count": 6}, None)
+    ]
+
+
+async def test_a_keyed_fetch_is_never_paged() -> None:
+    """A single object is not a page; paging params would be noise."""
+    client = FakeClient()
+    await read_resource(_ctx(client), "user", "local", "alice", None, None)
+    assert client.calls == [("cmdb_get", "user/local/alice", None, None)]
+
+
+async def test_a_row_with_params_keeps_them_alongside_paging(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from paging import PAGE_ROWS
+
+    client = FakeClient()
+    table = {
+        "demo": {"row": Resource("monitor", "some/path", "Demo.", params=(("k", "v"),))}
+    }
+    monkeypatch.setattr("tools._read.READ_RESOURCES", table)
+
+    await read_resource(_ctx(client), "demo", "row", None, None, None)
+
+    assert client.calls == [
+        (
+            "monitor_get",
+            "some/path",
+            {"k": "v", "start": 0, "count": PAGE_ROWS + 1},
+            None,
+        )
+    ]
+
+
+@pytest.mark.parametrize(("start", "count"), [(-1, None), (None, 0)])
+async def test_an_impossible_page_is_refused_without_calling_the_device(
+    start: int | None, count: int | None
+) -> None:
+    client = FakeClient()
+    result = await read_resource(
+        _ctx(client), "user", "local", None, None, None, start, count
+    )
+    assert client.calls == [], "a refused call must not reach the FortiGate"
+    assert "error" in result
+
+
+async def test_the_response_carries_page_info() -> None:
+    client = FakeClient()
+    result = await read_resource(_ctx(client), "user", "local", None, None, None)
+    assert result["_page"] == {"start": 0, "returned": 0, "more": False, "total": None}

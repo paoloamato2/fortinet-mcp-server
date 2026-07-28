@@ -18,6 +18,7 @@ from mcp.server.fastmcp import Context
 
 from fortios_client import FortiOSError
 from instances import FortiOSAPI
+from paging import PAGE_ROWS, PageError, normalise, page_query, paginate
 from resources import READ_RESOURCES
 
 
@@ -38,6 +39,8 @@ async def read_resource(
     name: str | None,
     instance: str | None,
     vdom: str | None,
+    start: int | None = None,
+    count: int | None = None,
 ) -> dict[str, Any]:
     """Read one FortiOS resource, listing it or fetching a single object.
 
@@ -49,9 +52,12 @@ async def read_resource(
             singletons and for monitor endpoints, which take no path key.
         instance: Target FortiGate name, or ``"*"`` to fan out.
         vdom: Target VDOM, or ``None`` for the client default.
+        start: Row offset when listing. Ignored for a keyed fetch.
+        count: Rows wanted when listing. Ignored for a keyed fetch.
 
     Returns:
-        The FortiOS response, or ``{"error": ..., "status_code": ...}``.
+        The FortiOS response, or ``{"error": ..., "status_code": ...}``. A
+        listing also carries ``_page``; a keyed fetch does not.
     """
     row = READ_RESOURCES.get(domain, {}).get(resource)
     if row is None:
@@ -68,12 +74,27 @@ async def read_resource(
 
     path = f"{row.path}/{name}" if name is not None else row.path
     params = dict(row.params) if row.params else None
+
+    # A keyed fetch is one object, not a page.
+    page_start, page_count = 0, PAGE_ROWS
+    if name is None:
+        try:
+            page_start, page_count = normalise(start, count)
+        except PageError as exc:
+            return {"error": str(exc)}
+        params = {**(params or {}), **page_query(page_start, page_count)}
+
     client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
         instance
     )
     try:
         if row.api == "cmdb":
-            return await client.cmdb_get(path, params, vdom=vdom)
-        return await client.monitor_get(path, params, vdom=vdom)
+            payload = await client.cmdb_get(path, params, vdom=vdom)
+        else:
+            payload = await client.monitor_get(path, params, vdom=vdom)
     except FortiOSError as exc:
         return {"error": str(exc), "status_code": exc.status_code}
+
+    if name is not None:
+        return payload
+    return paginate(payload, page_start, page_count)
