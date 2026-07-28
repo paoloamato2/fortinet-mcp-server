@@ -12,6 +12,7 @@ from pydantic import Field
 
 from fortios_client import FortiOSError
 from instances import FortiOSAPI
+from paging import PageError, normalise, page_query, paginate
 from resources import SystemResource
 from tool_annotations import CREATES, DESTRUCTIVE, READ_ONLY
 from tool_params import CountParam, InstanceParam, StartParam, VdomParam
@@ -117,6 +118,8 @@ def register(mcp: FastMCP) -> None:
         include_vlan: Annotated[
             bool, Field(default=True, description="Include VLAN sub-interfaces.")
         ] = True,
+        start: StartParam = None,
+        count: CountParam = None,
         instance: InstanceParam = None,
         vdom: VdomParam = None,
     ) -> dict[str, Any]:
@@ -128,9 +131,15 @@ def register(mcp: FastMCP) -> None:
         if not include_vlan:
             params["filter"] = "type!=vlan"
         try:
-            return await client.cmdb_get("system/interface", params or None, vdom=vdom)
+            page_start, page_count = normalise(start, count)
+        except PageError as exc:
+            return {"error": str(exc)}
+        params.update(page_query(page_start, page_count))
+        try:
+            payload = await client.cmdb_get("system/interface", params, vdom=vdom)
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
+        return paginate(payload, page_start, page_count)
 
     @mcp.tool(annotations=READ_ONLY)
     async def system_interface_get(
