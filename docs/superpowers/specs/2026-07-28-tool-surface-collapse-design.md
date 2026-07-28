@@ -68,7 +68,7 @@ been found at runtime:
 | Backward compatibility | **Break it.** The 160 names are removed outright, no deprecation window and no legacy profile | A deprecation release would *add* the new tools while keeping the old, pushing the surface to ~60k tokens for a release — paying a cost to defer the benefit. A dual profile means maintaining and testing two surfaces forever. |
 | Replacement shape | **One read tool per domain**, nine total, enum spanning both `cmdb` and `monitor` paths | Keeps the count minimal while leaving exactly one obvious choice per domain. Alternatives measured: split cmdb/monitor = 14 tools; catalog-only = 1 tool but adds a round-trip before any read and degrades tool-selection accuracy. |
 | Delete replacement | **One global `fortios_delete`** with a 15-value `resource` enum | Verified: FastMCP enforces `Literal` server-side, rejecting invalid values before the body runs — including path-traversal strings that `cmdb_delete(resource_path=...)` accepts. The enum is a genuine narrowing, not just a rename. Per-domain deletes cost ~2.2k tokens for allowlist granularity nobody asked for. |
-| Enum value naming | Domain prefix and `_list`/`_get` suffix stripped: `user_local_list` → `local` | The domain is already in the tool name. `user_read(resource="local")` reads better than `user_read(resource="user_local_list")` and costs fewer tokens. |
+| Enum value naming | Strip a leading `monitor_`, then the `<domain>_` prefix, then a trailing `_list` or `_get`: `user_local_list` → `local` | The domain is already in the tool name. `user_read(resource="local")` reads better than `user_read(resource="user_local_list")` and costs fewer tokens. Verified collision-free across all nine domains. Two exceptions: the `wireless` domain also strips a `wifi_` prefix (`wifi_vap_list` → `vap`), and `monitor_firewall_ip_list` → `iplist` rather than the bare `ip` the rule would give, matching its `firewall/iplist` path. |
 | `system_status` | **Folded**, no exception | Becomes `system_read(resource="status")`. It is the tool `instructions` names first, so that text changes in the same commit; a standalone exception would cost ~250 tokens and invite more exceptions. |
 | `license/status` duplicate | Keep `monitor_read(resource="license_status")`, drop the `system` twin | Identical call today. Retaining both would encode a duplicate in the table the uniqueness test forbids. |
 | `wifi_wtp_deauthorize` | Folded into `fortios_delete(resource="wifi_wtp")` | It is literally `cmdb_delete` on the WTP entry. Its table `summary` states that removing the entry deauthorises the AP, since that is not guessable from the resource name. |
@@ -121,12 +121,13 @@ vpn.ssl/settings
 wireless-controller/setting  wireless-controller/rf-analysis
 ```
 
-The nine enums hold 126 values in total:
+The nine enums hold 125 values in total — the 126 collapsed resources less the
+dropped `license/status` duplicate:
 
 | domain | enum values | cmdb tables | cmdb singletons | monitor |
 |---|---|---|---|---|
 | `security_read` | 28 | 26 | 2 | 0 |
-| `system_read` | 20 | 7 | 7 | 6 |
+| `system_read` | 19 | 7 | 7 | 5 |
 | `router_read` | 17 | 7 | 5 | 5 |
 | `firewall_read` | 15 | 12 | 0 | 3 |
 | `vpn_read` | 12 | 8 | 1 | 3 |
