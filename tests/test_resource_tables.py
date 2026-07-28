@@ -17,18 +17,18 @@ from resources import (
 )
 
 EXPECTED_ROW_COUNTS = {
-    "firewall": 15,
+    "firewall": 14,
     "log": 4,
-    "monitor": 11,
+    "monitor": 10,
     "router": 17,
-    "security": 28,
+    "security": 27,
     "system": 19,
     "user": 7,
     "vpn": 12,
-    "wireless": 12,
+    "wireless": 11,
 }
 
-#: Every ``(api, path)`` pair the table must expose: the 125 read endpoints
+#: Every ``(api, path)`` pair the table must expose: the 121 read endpoints
 #: plus the 15 delete paths, deduplicated (12 of the 15 delete paths repeat a
 #: read path already in the set). This is a literal, checked-in oracle
 #: external to ``resources.py`` -- generated once from the reviewed table
@@ -52,7 +52,7 @@ EXPECTED_REACHABLE_ENDPOINTS: frozenset[tuple[str, str]] = frozenset(
         ("cmdb", "dlp/sensor"),
         ("cmdb", "dnsfilter/domain-filter"),
         ("cmdb", "dnsfilter/profile"),
-        ("cmdb", "emailfilter/bwl"),
+        ("cmdb", "emailfilter/block-allow-list"),
         ("cmdb", "emailfilter/profile"),
         ("cmdb", "file-filter/profile"),
         ("cmdb", "firewall.schedule/onetime"),
@@ -64,7 +64,6 @@ EXPECTED_REACHABLE_ENDPOINTS: frozenset[tuple[str, str]] = frozenset(
         ("cmdb", "firewall/central-snat-map"),
         ("cmdb", "firewall/ippool"),
         ("cmdb", "firewall/policy"),
-        ("cmdb", "firewall/policy6"),
         ("cmdb", "firewall/shaping-policy"),
         ("cmdb", "firewall/ssl-ssh-profile"),
         ("cmdb", "firewall/vip"),
@@ -101,7 +100,6 @@ EXPECTED_REACHABLE_ENDPOINTS: frozenset[tuple[str, str]] = frozenset(
         ("cmdb", "system/interface"),
         ("cmdb", "system/ntp"),
         ("cmdb", "system/sdwan"),
-        ("cmdb", "system/time"),
         ("cmdb", "system/vdom"),
         ("cmdb", "user/group"),
         ("cmdb", "user/ldap"),
@@ -128,19 +126,15 @@ EXPECTED_REACHABLE_ENDPOINTS: frozenset[tuple[str, str]] = frozenset(
         ("cmdb", "webfilter/urlfilter"),
         ("cmdb", "wireless-controller.hotspot20/hs-profile"),
         ("cmdb", "wireless-controller/qos-profile"),
-        ("cmdb", "wireless-controller/rf-analysis"),
         ("cmdb", "wireless-controller/setting"),
         ("cmdb", "wireless-controller/vap"),
         ("cmdb", "wireless-controller/vap-group"),
         ("cmdb", "wireless-controller/wtp"),
         ("cmdb", "wireless-controller/wtp-profile"),
-        ("cmdb", "ztna/ems-tag"),
-        ("cmdb", "ztna/proxy"),
+        ("cmdb", "ztna/web-proxy"),
         ("monitor", "endpoint-control/summary"),
         ("monitor", "firewall/address-dynamic"),
-        ("monitor", "firewall/iplist"),
-        ("monitor", "firewall/policy-lookup"),
-        ("monitor", "fortiview/statistics"),
+        ("monitor", "firewall/policy"),
         ("monitor", "ips/anomaly"),
         ("monitor", "license/forticare-resellers"),
         ("monitor", "license/status"),
@@ -149,19 +143,21 @@ EXPECTED_REACHABLE_ENDPOINTS: frozenset[tuple[str, str]] = frozenset(
         ("monitor", "router/ipv4"),
         ("monitor", "router/ipv6"),
         ("monitor", "router/statistics"),
-        ("monitor", "sdwan/health-check"),
-        ("monitor", "sdwan/members"),
-        ("monitor", "switch-controller/managed-switch"),
+        ("monitor", "switch-controller/managed-switch/status"),
+        ("monitor", "system/available-certificates"),
         ("monitor", "system/firmware"),
         ("monitor", "system/ha-statistics"),
         ("monitor", "system/performance/status"),
         ("monitor", "system/resource/usage"),
         ("monitor", "system/running-processes"),
-        ("monitor", "system/security-rating"),
+        ("monitor", "system/security-rating/status"),
         ("monitor", "system/status"),
+        ("monitor", "system/time"),
+        ("monitor", "user/banned"),
         ("monitor", "user/fortitoken"),
-        ("monitor", "utm/app-lookup"),
-        ("monitor", "vpn-certificate/cert"),
+        ("monitor", "utm/application-categories"),
+        ("monitor", "virtual-wan/health-check"),
+        ("monitor", "virtual-wan/members"),
         ("monitor", "vpn/ipsec"),
         ("monitor", "vpn/ssl"),
         ("monitor", "wifi/interfering_ap"),
@@ -173,10 +169,17 @@ EXPECTED_REACHABLE_ENDPOINTS: frozenset[tuple[str, str]] = frozenset(
 
 
 def test_row_counts_are_frozen() -> None:
-    """125 read rows across nine domains -- 126 collapsed, less one duplicate."""
+    """121 read rows across nine domains.
+
+    126 collapsed, less one duplicate, less the four dropped on 2026-07-28
+    after live testing against FortiOS 7.6.6: firewall/policy6,
+    security/ztna_tag_policy, wireless/rf_analysis and
+    monitor/fortiview_top_threat_map all pointed at endpoints that do not
+    exist on 7.6.x, and none has an equivalent to repoint at.
+    """
     actual = {d: len(rows) for d, rows in READ_RESOURCES.items()}
     assert actual == EXPECTED_ROW_COUNTS
-    assert sum(actual.values()) == 125
+    assert sum(actual.values()) == 121
     assert len(DELETE_RESOURCES) == 15
 
 
@@ -241,8 +244,8 @@ def test_spot_check_rows_carry_the_original_docstrings() -> None:
     )
     assert READ_RESOURCES["firewall"]["iplist"] == Resource(
         "monitor",
-        "firewall/iplist",
-        "List active banned/exempt IPs in the firewall.",
+        "user/banned",
+        "List IPs and users currently banned by the firewall.",
         keyed=False,
     )
 
@@ -330,18 +333,22 @@ def test_migration_completeness_against_the_removed_tools() -> None:
     direction the typo goes (a path silently dropped, or an unintended one
     introduced).
 
-    125 read endpoints plus the 15 delete paths, deduplicated: 12 of the 15
+    121 read endpoints plus the 15 delete paths, deduplicated: 12 of the 15
     delete paths repeat a read path already in the set. The other 3 --
     firewall/address, firewall/policy, system/interface -- do not, because
     their `_get`/`_list` siblings carry real filter logic and were
     deliberately kept outside ``READ_RESOURCES``; those three are reachable
     through the surviving `_list`/`_get` tools instead of a `<domain>_read`
-    row. Hence 125 + 3, not 125 + 0.
+    row. Hence 121 + 3, not 121 + 0.
+
+    ``("cmdb", "firewall/policy")`` and ``("monitor", "firewall/policy")``
+    are two different endpoints, not a duplicate: the CMDB one is the
+    delete path, the monitor one serves firewall/policy_stats.
     """
     reachable = {
         (row.api, row.path) for rows in READ_RESOURCES.values() for row in rows.values()
     } | {("cmdb", row.path) for row in DELETE_RESOURCES.values()}
-    assert len(reachable) == 128
+    assert len(reachable) == 124
 
     missing = EXPECTED_REACHABLE_ENDPOINTS - reachable
     assert missing == set(), f"expected endpoint(s) became unreachable: {missing}"

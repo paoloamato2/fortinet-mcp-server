@@ -78,6 +78,15 @@ def register(mcp: FastMCP) -> None:
 
     # ==================================================================
     # FORTIVIEW / TOP TALKERS
+    #
+    # All three hit fortiview/realtime-statistics and differ only by
+    # report_by. The old path (fortiview/statistics) and the old parameter
+    # name ("type") both predate FortiOS 7.x: live testing on 7.6.6 on
+    # 2026-07-28 showed the path 404s outright, so every one of these tools
+    # was returning an error rather than data. Note that report_by silently
+    # falls back to the default source view for a value FortiOS does not
+    # recognise -- it does not reject one -- so a wrong value here returns
+    # plausible but incorrect data. Only add a value confirmed on a device.
     # ==================================================================
 
     @mcp.tool(annotations=READ_ONLY)
@@ -95,7 +104,9 @@ def register(mcp: FastMCP) -> None:
         )
         try:
             return await client.monitor_get(
-                "fortiview/statistics", {"type": "source", "count": count}, vdom=vdom
+                "fortiview/realtime-statistics",
+                {"report_by": "source", "count": count},
+                vdom=vdom,
             )
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
@@ -115,8 +126,8 @@ def register(mcp: FastMCP) -> None:
         )
         try:
             return await client.monitor_get(
-                "fortiview/statistics",
-                {"type": "destination", "count": count},
+                "fortiview/realtime-statistics",
+                {"report_by": "destination", "count": count},
                 vdom=vdom,
             )
         except FortiOSError as exc:
@@ -137,8 +148,8 @@ def register(mcp: FastMCP) -> None:
         )
         try:
             return await client.monitor_get(
-                "fortiview/statistics",
-                {"type": "application", "count": count},
+                "fortiview/realtime-statistics",
+                {"report_by": "application", "count": count},
                 vdom=vdom,
             )
         except FortiOSError as exc:

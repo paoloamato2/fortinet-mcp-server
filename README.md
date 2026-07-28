@@ -48,7 +48,7 @@
 > `fortios_delete(resource="firewall_address", name=...)`; `system_status()` is
 > `system_read(resource="status")`.
 
-- **80 typed MCP tools** organized by functional area (system, firewall, VPN, router, user, monitor, log, security, wireless), plus a fleet-management tool (`fortigate_list`) — nine of the 80 are per-domain `<domain>_read` tools that cover 125 read-only resources through a `resource` enum
+- **80 typed MCP tools** organized by functional area (system, firewall, VPN, router, user, monitor, log, security, wireless), plus a fleet-management tool (`fortigate_list`) — nine of the 80 are per-domain `<domain>_read` tools that cover 121 read-only resources through a `resource` enum
 - **10 generic pass-through tools** that cover all 1,536 FortiOS API endpoints, including the universal `fortios_delete`
 - Async HTTP client with Bearer-token authentication via `httpx`
 - Full support for **CMDB, Monitor, Log, and Service** API sections

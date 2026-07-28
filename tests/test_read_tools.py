@@ -14,6 +14,7 @@ import pytest
 from mcp.server.fastmcp import Context
 
 from fortios_client import FortiOSError
+from resources import Resource
 from tools._read import read_resource, resource_table_doc
 
 
@@ -99,19 +100,39 @@ async def test_vdom_is_passed_through() -> None:
     assert client.calls == [("cmdb_get", "user/local", None, "root")]
 
 
-async def test_fortiview_threat_map_sends_its_type_param() -> None:
-    """monitor/fortiview_top_threat_map shares a path with three surviving
-    siblings (monitor_fortiview_top_sources/destinations/applications) and
-    is distinguished from them only by the ``type`` query parameter -- drop
-    it and the row silently returns the wrong FortiView data.
+async def test_a_rows_params_are_sent_with_the_request(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """``Resource.params`` lets one path serve rows differing only by a query.
+
+    No shipped row needs it today -- the one that did,
+    monitor/fortiview_top_threat_map, was removed once live testing on
+    FortiOS 7.6.6 showed its path 404s. The mechanism stays because the next
+    such row will need it, so it keeps its own coverage rather than relying
+    on a production row to exercise it.
     """
     client = FakeClient()
-    await read_resource(
-        _ctx(client), "monitor", "fortiview_top_threat_map", None, None, None
-    )
-    assert client.calls == [
-        ("monitor_get", "fortiview/statistics", {"type": "threat"}, None)
-    ]
+    table = {
+        "demo": {"row": Resource("monitor", "some/path", "Demo.", params=(("k", "v"),))}
+    }
+    monkeypatch.setattr("tools._read.READ_RESOURCES", table)
+
+    await read_resource(_ctx(client), "demo", "row", None, None, None)
+
+    assert client.calls == [("monitor_get", "some/path", {"k": "v"}, None)]
+
+
+async def test_a_row_without_params_sends_none(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An empty params tuple must not become an empty dict on the wire."""
+    client = FakeClient()
+    table = {"demo": {"row": Resource("monitor", "some/path", "Demo.")}}
+    monkeypatch.setattr("tools._read.READ_RESOURCES", table)
+
+    await read_resource(_ctx(client), "demo", "row", None, None, None)
+
+    assert client.calls == [("monitor_get", "some/path", None, None)]
 
 
 async def test_name_on_a_singleton_is_refused_without_calling_the_device() -> None:
@@ -177,15 +198,15 @@ async def test_the_replaced_user_tools_are_gone(removed: str) -> None:
 
 
 EXPECTED_ENUM_SIZES = {
-    "firewall_read": 15,
+    "firewall_read": 14,
     "log_read": 4,
-    "monitor_read": 11,
+    "monitor_read": 10,
     "router_read": 17,
-    "security_read": 28,
+    "security_read": 27,
     "system_read": 19,
     "user_read": 7,
     "vpn_read": 12,
-    "wireless_read": 12,
+    "wireless_read": 11,
 }
 
 

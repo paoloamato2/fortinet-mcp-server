@@ -30,12 +30,14 @@ class Resource(NamedTuple):
     # Extra query parameters every request for this row must carry. A tuple
     # of (key, value) pairs, not a dict: NamedTuple fields must stay
     # hashable, and a mutable dict default would be one shared object
-    # aliased across every row that omits it. Empty for every row except
-    # monitor/fortiview_top_threat_map, whose three surviving siblings
-    # (monitor_fortiview_top_sources/destinations/applications) hit the
-    # identical fortiview/statistics path and are distinguished only by
-    # the "type" query parameter -- without it here, this row would issue
-    # the wrong request while advertising the right description.
+    # aliased across every row that omits it.
+    #
+    # Currently empty for every row, and deliberately kept anyway: it is what
+    # lets one path serve several rows that differ only by a query parameter.
+    # The row that motivated it, monitor/fortiview_top_threat_map, was removed
+    # after live testing on FortiOS 7.6.6 showed its path 404s and its
+    # "type=threat" value is not honoured (see tools/monitor.py). The next
+    # such row will need this field again; ``read_resource`` still applies it.
     params: tuple[tuple[str, str], ...] = ()
 
 
@@ -58,9 +60,7 @@ SINGLETON_PATHS: frozenset[str] = frozenset(
         "system/global",
         "system/ntp",
         "system/sdwan",
-        "system/time",
         "vpn.ssl/settings",
-        "wireless-controller/rf-analysis",
         "wireless-controller/setting",
     }
 )
@@ -72,7 +72,6 @@ FirewallResource: TypeAlias = Literal[
     "central_snat",
     "iplist",
     "ippool",
-    "policy6",
     "policy_stats",
     "schedule_one_time",
     "schedule_recurring",
@@ -93,7 +92,6 @@ LogResource: TypeAlias = Literal[
 
 MonitorResource: TypeAlias = Literal[
     "endpoint_summary",
-    "fortiview_top_threat_map",
     "ips_anomaly",
     "license_forticare_resellers",
     "license_status",
@@ -153,7 +151,6 @@ SecurityResource: TypeAlias = Literal[
     "webfilter_profile",
     "webfilter_urlfilter",
     "ztna_server",
-    "ztna_tag_policy",
 ]
 
 SystemResource: TypeAlias = Literal[
@@ -209,7 +206,6 @@ WirelessResource: TypeAlias = Literal[
     "interfering_ap",
     "managed_ap",
     "qos_profile",
-    "rf_analysis",
     "rogue_ap",
     "spectrum_analysis",
     "vap",
@@ -259,8 +255,8 @@ READ_RESOURCES: dict[str, dict[str, Resource]] = {
         ),
         "iplist": Resource(
             "monitor",
-            "firewall/iplist",
-            "List active banned/exempt IPs in the firewall.",
+            "user/banned",
+            "List IPs and users currently banned by the firewall.",
             keyed=False,
         ),
         "ippool": Resource(
@@ -269,12 +265,9 @@ READ_RESOURCES: dict[str, dict[str, Resource]] = {
             "List all IP pool (source NAT) objects.",
             keyed=True,
         ),
-        "policy6": Resource(
-            "cmdb", "firewall/policy6", "List all IPv6 firewall policies.", keyed=True
-        ),
         "policy_stats": Resource(
             "monitor",
-            "firewall/policy-lookup",
+            "firewall/policy",
             "Get hit counts, bytes, and packet statistics per firewall policy.",
             keyed=False,
         ),
@@ -354,13 +347,6 @@ READ_RESOURCES: dict[str, dict[str, Resource]] = {
             "Get endpoint control (FortiClient) summary statistics.",
             keyed=False,
         ),
-        "fortiview_top_threat_map": Resource(
-            "monitor",
-            "fortiview/statistics",
-            "Get FortiView threat map data (geo-blocking source countries).",
-            keyed=False,
-            params=(("type", "threat"),),
-        ),
         "ips_anomaly": Resource(
             "monitor",
             "ips/anomaly",
@@ -393,13 +379,13 @@ READ_RESOURCES: dict[str, dict[str, Resource]] = {
         ),
         "security_rating_summary": Resource(
             "monitor",
-            "system/security-rating",
-            "Get the Security Rating summary score and findings.",
+            "system/security-rating/status",
+            "Get whether a Security Rating run is currently in progress.",
             keyed=False,
         ),
         "switch_controller_managed_switch": Resource(
             "monitor",
-            "switch-controller/managed-switch",
+            "switch-controller/managed-switch/status",
             "Get status of all FortiSwitch managed switches.",
             keyed=False,
         ),
@@ -411,8 +397,8 @@ READ_RESOURCES: dict[str, dict[str, Resource]] = {
         ),
         "utm_app_categories": Resource(
             "monitor",
-            "utm/app-lookup",
-            "Get UTM application category statistics.",
+            "utm/application-categories",
+            "List the UTM application control categories and their IDs.",
             keyed=False,
         ),
     },
@@ -486,13 +472,13 @@ READ_RESOURCES: dict[str, dict[str, Resource]] = {
         ),
         "sdwan_health_check": Resource(
             "monitor",
-            "sdwan/health-check",
+            "virtual-wan/health-check",
             "Get SD-WAN performance SLA health check results.",
             keyed=False,
         ),
         "sdwan_members": Resource(
             "monitor",
-            "sdwan/members",
+            "virtual-wan/members",
             "Get SD-WAN member interface status and bandwidth usage.",
             keyed=False,
         ),
@@ -551,7 +537,7 @@ READ_RESOURCES: dict[str, dict[str, Resource]] = {
         ),
         "emailfilter_bwl": Resource(
             "cmdb",
-            "emailfilter/bwl",
+            "emailfilter/block-allow-list",
             "List email filter block/allow lists.",
             keyed=True,
         ),
@@ -620,14 +606,8 @@ READ_RESOURCES: dict[str, dict[str, Resource]] = {
         ),
         "ztna_server": Resource(
             "cmdb",
-            "ztna/proxy",
-            "List all ZTNA access proxy (application gateway) servers.",
-            keyed=True,
-        ),
-        "ztna_tag_policy": Resource(
-            "cmdb",
-            "ztna/ems-tag",
-            "List all ZTNA EMS tag (posture check) policies.",
+            "ztna/web-proxy",
+            "List all ZTNA web proxy (application gateway) servers.",
             keyed=True,
         ),
     },
@@ -714,7 +694,7 @@ READ_RESOURCES: dict[str, dict[str, Resource]] = {
             keyed=False,
         ),
         "time": Resource(
-            "cmdb",
+            "monitor",
             "system/time",
             "Get the current system time and timezone.",
             keyed=False,
@@ -783,7 +763,7 @@ READ_RESOURCES: dict[str, dict[str, Resource]] = {
         ),
         "certificate_valid": Resource(
             "monitor",
-            "vpn-certificate/cert",
+            "system/available-certificates",
             "Check validity status of all VPN-related certificates.",
             keyed=False,
         ),
@@ -854,12 +834,6 @@ READ_RESOURCES: dict[str, dict[str, Resource]] = {
             "wireless-controller/qos-profile",
             "List all wireless QoS profiles.",
             keyed=True,
-        ),
-        "rf_analysis": Resource(
-            "cmdb",
-            "wireless-controller/rf-analysis",
-            "Get wireless RF analysis settings.",
-            keyed=False,
         ),
         "rogue_ap": Resource(
             "monitor",
