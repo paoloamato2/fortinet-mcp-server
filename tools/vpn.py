@@ -16,49 +16,47 @@ from pydantic import Field
 
 from fortios_client import FortiOSError
 from instances import FortiOSAPI
+from resources import VpnResource
 from tool_annotations import CREATES, DESTRUCTIVE, READ_ONLY, UPDATES
 from tool_params import InstanceParam, VdomParam
+from tools._read import read_resource, resource_table_doc
 
 
 def register(mcp: FastMCP) -> None:
     """Register all VPN tools."""
 
+    async def vpn_read(
+        ctx: Context,
+        resource: Annotated[
+            VpnResource, Field(description="Which vpn resource to read.")
+        ],
+        name: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Object key to fetch. Omit to list every object. "
+                    "Rejected for singletons and monitor endpoints."
+                ),
+            ),
+        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
+    ) -> dict[str, Any]:
+        """Placeholder replaced below with the generated resource table."""
+        return await read_resource(ctx, "vpn", resource, name, instance, vdom)
+
+    vpn_read.__doc__ = (
+        "Read IPsec and SSL-VPN configuration, certificates and tunnel "
+        "state.\n\n"
+        "Omit `name` to list a resource, or pass it to fetch one object by "
+        "key.\n\n" + resource_table_doc("vpn")
+    )
+    mcp.tool(annotations=READ_ONLY)(vpn_read)
+
     # ==================================================================
     # IPsec VPN — Phase 1 (Interface mode)
     # ==================================================================
-
-    @mcp.tool(annotations=READ_ONLY)
-    async def vpn_ipsec_phase1_list(
-        ctx: Context,
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """List all IPsec VPN Phase 1 (IKE gateway) interfaces."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.cmdb_get("vpn.ipsec/phase1-interface", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool(annotations=READ_ONLY)
-    async def vpn_ipsec_phase1_get(
-        ctx: Context,
-        name: Annotated[str, Field(description="Phase 1 tunnel name.")],
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """Get a specific IPsec Phase 1 interface configuration."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.cmdb_get(
-                f"vpn.ipsec/phase1-interface/{name}", vdom=vdom
-            )
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
 
     @mcp.tool(annotations=CREATES)
     async def vpn_ipsec_phase1_create(
@@ -187,39 +185,6 @@ def register(mcp: FastMCP) -> None:
     # IPsec VPN — Phase 2
     # ==================================================================
 
-    @mcp.tool(annotations=READ_ONLY)
-    async def vpn_ipsec_phase2_list(
-        ctx: Context,
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """List all IPsec VPN Phase 2 (SA / child SA) selectors."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.cmdb_get("vpn.ipsec/phase2-interface", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool(annotations=READ_ONLY)
-    async def vpn_ipsec_phase2_get(
-        ctx: Context,
-        name: Annotated[str, Field(description="Phase 2 selector name.")],
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """Get a specific IPsec Phase 2 selector configuration."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.cmdb_get(
-                f"vpn.ipsec/phase2-interface/{name}", vdom=vdom
-            )
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
     @mcp.tool(annotations=CREATES)
     async def vpn_ipsec_phase2_create(
         ctx: Context,
@@ -316,21 +281,6 @@ def register(mcp: FastMCP) -> None:
     # SSL VPN
     # ==================================================================
 
-    @mcp.tool(annotations=READ_ONLY)
-    async def vpn_ssl_settings_get(
-        ctx: Context,
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """Get SSL VPN global settings (port, certificates, idle timeout, etc.)."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.cmdb_get("vpn.ssl/settings", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
     @mcp.tool(annotations=DESTRUCTIVE)
     async def vpn_ssl_settings_update(
         ctx: Context,
@@ -378,37 +328,6 @@ def register(mcp: FastMCP) -> None:
             return {"error": "No fields to update were specified."}
         try:
             return await client.cmdb_put("vpn.ssl/settings", body, vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool(annotations=READ_ONLY)
-    async def vpn_ssl_portal_list(
-        ctx: Context,
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """List all SSL VPN portals."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.cmdb_get("vpn.ssl.web/portal", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool(annotations=READ_ONLY)
-    async def vpn_ssl_portal_get(
-        ctx: Context,
-        name: Annotated[str, Field(description="SSL VPN portal name.")],
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """Get a specific SSL VPN portal configuration."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.cmdb_get(f"vpn.ssl.web/portal/{name}", vdom=vdom)
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
@@ -486,103 +405,9 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool(annotations=READ_ONLY)
-    async def vpn_ssl_web_host_check_software_list(
-        ctx: Context,
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """List SSL VPN host check software (endpoint compliance) rules."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.cmdb_get("vpn.ssl.web/host-check-software", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    # ==================================================================
-    # VPN Certificates
-    # ==================================================================
-
-    @mcp.tool(annotations=READ_ONLY)
-    async def vpn_certificate_ca_list(
-        ctx: Context,
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """List all VPN CA certificates."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.cmdb_get("vpn.certificate/ca", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool(annotations=READ_ONLY)
-    async def vpn_certificate_local_list(
-        ctx: Context,
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """List all VPN local (device) certificates."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.cmdb_get("vpn.certificate/local", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool(annotations=READ_ONLY)
-    async def vpn_certificate_remote_list(
-        ctx: Context,
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """List all remote (peer) VPN certificates."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.cmdb_get("vpn.certificate/remote", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool(annotations=READ_ONLY)
-    async def vpn_certificate_ocsp_server_list(
-        ctx: Context,
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """List OCSP server configurations for certificate revocation checking."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.cmdb_get("vpn.certificate/ocsp-server", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
     # ==================================================================
     # Monitor: VPN Status
     # ==================================================================
-
-    @mcp.tool(annotations=READ_ONLY)
-    async def monitor_vpn_ipsec(
-        ctx: Context,
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """Get status of all IPsec VPN tunnels (up/down, bytes transferred, SAs)."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.monitor_get("vpn/ipsec", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
 
     @mcp.tool(annotations=UPDATES)
     async def monitor_vpn_ipsec_tunnel_up(
@@ -624,21 +449,6 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool(annotations=READ_ONLY)
-    async def monitor_vpn_ssl_list(
-        ctx: Context,
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """List active SSL VPN sessions."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.monitor_get("vpn/ssl", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
     @mcp.tool(annotations=DESTRUCTIVE)
     async def monitor_vpn_ssl_delete_user(
         ctx: Context,
@@ -662,20 +472,5 @@ def register(mcp: FastMCP) -> None:
             body["index"] = index
         try:
             return await client.monitor_post("vpn/ssl/delete", body, vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool(annotations=READ_ONLY)
-    async def monitor_vpn_certificate_valid(
-        ctx: Context,
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """Check validity status of all VPN-related certificates."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.monitor_get("vpn-certificate/cert", vdom=vdom)
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
