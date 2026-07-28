@@ -30,6 +30,7 @@ from typing import AsyncGenerator
 
 from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
+from mcp.types import Tool as MCPTool
 
 from instances import InstanceRegistry, load_instances, roster_text
 
@@ -112,7 +113,34 @@ async def lifespan(server: FastMCP) -> AsyncGenerator[dict, None]:
 # FastMCP application
 # ─────────────────────────────────────────────────────────────────────
 
-mcp = FastMCP(
+
+class TrimmedFastMCP(FastMCP):
+    """``FastMCP`` that omits pydantic's ``title`` keys from tool schemas.
+
+    Pydantic derives a ``title`` from every field name and one for the
+    argument model itself. Across 241 tools that is 26,191 characters of
+    ``"title": "Vdom"`` restating the JSON key beside it -- roughly 6,550
+    tokens on every request, for a field JSON Schema defines as
+    presentational.
+
+    ``Tool.from_function`` exposes no schema hook, so the trim happens at the
+    one point where schemas are serialised: ``list_tools``, which
+    ``_setup_handlers`` registers as a bound method.
+    """
+
+    async def list_tools(self) -> list[MCPTool]:
+        """Every registered tool, with ``title`` keys removed."""
+        tools = await super().list_tools()
+        for tool in tools:
+            schema = tool.inputSchema
+            schema.pop("title", None)
+            for prop in schema.get("properties", {}).values():
+                if isinstance(prop, dict):
+                    prop.pop("title", None)
+        return tools
+
+
+mcp = TrimmedFastMCP(
     name="FortiOS MCP Server",
     host=os.environ.get("MCP_HOST", "127.0.0.1"),
     port=int(os.environ.get("MCP_PORT", "8000")),
