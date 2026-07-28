@@ -13,8 +13,10 @@ from pydantic import Field
 
 from fortios_client import FortiOSError
 from instances import FortiOSAPI
+from resources import LogResource
 from tool_annotations import DESTRUCTIVE, READ_ONLY
 from tool_params import InstanceParam, VdomParam
+from tools._read import read_resource, resource_table_doc
 
 
 # Log source backends
@@ -48,6 +50,34 @@ _LOG_TYPES = (
 
 def register(mcp: FastMCP) -> None:
     """Register all log tools."""
+
+    async def log_read(
+        ctx: Context,
+        resource: Annotated[
+            LogResource, Field(description="Which log resource to read.")
+        ],
+        name: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Object key to fetch. Omit to list every object. "
+                    "Rejected for singletons and monitor endpoints."
+                ),
+            ),
+        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
+    ) -> dict[str, Any]:
+        """Placeholder replaced below with the generated resource table."""
+        return await read_resource(ctx, "log", resource, name, instance, vdom)
+
+    log_read.__doc__ = (
+        "Read log subsystem configuration (disk, memory, FortiAnalyzer).\n\n"
+        "Omit `name` to list a resource, or pass it to fetch one object by "
+        "key.\n\n" + resource_table_doc("log")
+    )
+    mcp.tool(annotations=READ_ONLY)(log_read)
 
     # ==================================================================
     # GENERIC LOG QUERY (any backend + type)
@@ -440,66 +470,6 @@ def register(mcp: FastMCP) -> None:
     # ==================================================================
     # LOG CONFIGURATION
     # ==================================================================
-
-    @mcp.tool(annotations=READ_ONLY)
-    async def log_disk_filter_get(
-        ctx: Context,
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """Get the disk log filter settings (which log types are enabled)."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.cmdb_get("log.disk/filter", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool(annotations=READ_ONLY)
-    async def log_disk_setting_get(
-        ctx: Context,
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """Get the disk logging settings (log level, max log size, etc.)."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.cmdb_get("log.disk/setting", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool(annotations=READ_ONLY)
-    async def log_memory_setting_get(
-        ctx: Context,
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """Get the memory logging settings."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.cmdb_get("log.memory/setting", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool(annotations=READ_ONLY)
-    async def log_fortianalyzer_setting_get(
-        ctx: Context,
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """Get FortiAnalyzer logging configuration (server, port, status)."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.cmdb_get("log.fortianalyzer/setting", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
 
     @mcp.tool(annotations=DESTRUCTIVE)
     async def log_fortianalyzer_setting_update(

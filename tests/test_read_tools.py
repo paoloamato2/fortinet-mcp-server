@@ -8,6 +8,7 @@ comes back as a dict instead of propagating.
 
 from __future__ import annotations
 
+import asyncio
 from typing import Any, cast
 
 import pytest
@@ -161,15 +162,31 @@ async def test_the_replaced_user_tools_are_gone(removed: str) -> None:
     assert removed not in names, f"{removed} should have folded into user_read"
 
 
-async def test_user_read_is_registered_and_read_only() -> None:
+EXPECTED_ENUM_SIZES = {
+    "firewall_read": 15,
+    "log_read": 4,
+    "monitor_read": 11,
+    "router_read": 17,
+    "security_read": 28,
+    "system_read": 19,
+    "user_read": 7,
+    "vpn_read": 12,
+    "wireless_read": 12,
+}
+
+
+@pytest.mark.parametrize("tool_name", sorted(EXPECTED_ENUM_SIZES))
+def test_read_tool_is_registered_and_read_only(tool_name: str) -> None:
     from server import mcp
 
-    tools = {tool.name: tool for tool in await mcp.list_tools()}
-    assert "user_read" in tools
-    tool = tools["user_read"]
+    tools = {tool.name: tool for tool in asyncio.run(mcp.list_tools())}
+    assert tool_name in tools
+    tool = tools[tool_name]
     assert tool.annotations is not None
     assert tool.annotations.readOnlyHint is True
+    assert tool.annotations.destructiveHint is False
     props = tool.inputSchema["properties"]
     assert set(props) == {"resource", "name", "instance", "vdom"}
-    assert props["resource"]["enum"] == sorted(props["resource"]["enum"])
-    assert len(props["resource"]["enum"]) == 7
+    assert len(props["resource"]["enum"]) == EXPECTED_ENUM_SIZES[tool_name]
+    assert tool.description is not None
+    assert "- `" in tool.description, "resource table missing from description"
