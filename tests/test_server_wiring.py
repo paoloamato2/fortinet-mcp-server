@@ -88,12 +88,13 @@ def test_instructions_do_not_assert_an_unchecked_firmware_version() -> None:
     server enforces or detects the firmware a device runs — a fleet can be
     mixed. Asserting a concrete version there ("running FortiOS 7.6.6") tells
     the model something that may be false, so no full version literal may
-    appear; the guidance points at system_status instead.
+    appear; the guidance points at system_read(resource="status") instead
+    (folded from the now-removed system_status tool).
     """
     instructions = server.mcp.instructions or ""
 
     assert not re.search(r"\d+\.\d+\.\d+", instructions), instructions
-    assert "system_status" in instructions
+    assert "system_read" in instructions
 
 
 def test_reloading_under_a_populated_fleet_renders_the_roster(

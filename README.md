@@ -40,8 +40,16 @@
 
 ## Features
 
-- **231 typed MCP tools** organized by functional area (system, firewall, VPN, router, user, monitor, log, security, wireless), plus a fleet-management tool (`fortigate_list`)
-- **9 generic pass-through tools** that cover all 1,536 FortiOS API endpoints
+> **Changed in this release:** 160 single-purpose read and delete tools were
+> replaced by nine `<domain>_read` tools and one `fortios_delete`, cutting the
+> advertised tool surface by 55%. `ips_sensor_list` is now
+> `security_read(resource="ips_sensor")`; `user_local_get(name="alice")` is
+> `user_read(resource="local", name="alice")`; `firewall_address_delete` is
+> `fortios_delete(resource="firewall_address", name=...)`; `system_status()` is
+> `system_read(resource="status")`.
+
+- **80 typed MCP tools** organized by functional area (system, firewall, VPN, router, user, monitor, log, security, wireless), plus a fleet-management tool (`fortigate_list`) — nine of the 80 are per-domain `<domain>_read` tools that cover 125 read-only resources through a `resource` enum
+- **10 generic pass-through tools** that cover all 1,536 FortiOS API endpoints, including the universal `fortios_delete`
 - Async HTTP client with Bearer-token authentication via `httpx`
 - Full support for **CMDB, Monitor, Log, and Service** API sections
 - Configurable SSL verification (self-signed certificates supported)
@@ -49,28 +57,33 @@
 - Runs as **stdio** (Claude Desktop) or **HTTP** server (remote/cloud use)
 - **Every tool advertises MCP `ToolAnnotations`** (`readOnlyHint`, `destructiveHint`,
   `idempotentHint`, `openWorldHint`) so a gating client can auto-approve reads and still
-  confirm writes: 183 of the 241 tools advertise read-only, 58 advertise a write. See
+  confirm writes: 47 of the 91 tools advertise read-only, 44 advertise a write. See
   `tool_annotations.py`.
 
 ---
 
 ## Tool Categories
 
+Each of the nine functional modules below also registers one `<domain>_read`
+tool (e.g. `system_read`, `firewall_read`) that covers every read-only
+resource in that domain through a `resource` enum — see the migration note
+above and [Usage Examples](#usage-examples).
+
 | Module | # Tools | Description |
 |--------|--------:|-------------|
-| **Generic** | 9 | `cmdb_list/get/create/update/delete`, `monitor_get/action`, `log_get`, `service_call` — cover **ALL** endpoints |
-| **System** | 33 | Interfaces, DNS, NTP, admins, DHCP, SNMP, certificates, VDOMs, syslog |
-| **Firewall** | 37 | Policies (IPv4/IPv6), addresses, address groups, services, VIPs, IP pools, schedules, sessions |
-| **VPN** | 26 | IPsec Phase 1/2, SSL VPN portals/settings, tunnel up/down, VPN certificates |
-| **Router** | 24 | Static routes, OSPF, BGP, RIP, prefix lists, route maps, SD-WAN health |
-| **User** | 19 | Local users, groups, RADIUS, LDAP, TACACS+, SAML, authenticated sessions |
-| **Monitor** | 21 | ARP, FortiView top talkers, endpoint control, IPS stats, switch controller, config backup |
-| **Log** | 16 | Traffic, event, VPN, user, virus, webfilter, IPS, app-ctrl, DNS logs + log config |
-| **Security** | 35 | IPS, AV, webfilter, app control, DLP, email filter, DNS filter, WAF, ICAP, ssh-filter, ZTNA |
-| **Wireless** | 20 | AP profiles, WTPs, SSIDs (VAPs), Hotspot 2.0, connected clients, rogue APs |
+| **Generic** | 10 | `cmdb_list/get/create/update/delete`, `monitor_get/action`, `log_get`, `service_call`, `fortios_delete` — cover **ALL** endpoints |
+| **System** | 10 | `system_read` (19 resources) plus admins, DHCP servers, interfaces, DNS, NTP, global config |
+| **Firewall** | 16 | `firewall_read` (15 resources) plus policies, addresses, address groups, services, VIPs, IP pools, session control |
+| **VPN** | 9 | `vpn_read` (12 resources) plus IPsec Phase 1/2, SSL VPN portals/settings, tunnel up/down |
+| **Router** | 6 | `router_read` (17 resources) plus BGP, static routes, route lookups |
+| **User** | 8 | `user_read` (7 resources) plus local users, groups, RADIUS, LDAP, session disconnect |
+| **Monitor** | 11 | `monitor_read` (11 resources) plus FortiView, interface stats, GeoIP, ICMP ping, config backup |
+| **Log** | 13 | `log_read` (4 resources) plus traffic, event, virus, webfilter, IPS, app-ctrl, DNS logs, FortiAnalyzer config |
+| **Security** | 3 | `security_read` (28 resources) plus AV profile create, IPS sensor create |
+| **Wireless** | 4 | `wireless_read` (12 resources) plus VAP create, AP status, client list |
 | **Fleet** | 1 | `fortigate_list` — inspect the configured FortiGates themselves (name, description, host, VDOM, read-only status, optional health check) |
 
-**Total: 241 tools**
+**Total: 91 tools**
 
 ---
 
@@ -181,7 +194,7 @@ This mode is useful for shared team setups or cloud-hosted deployments.
 ## Managing Multiple FortiGates
 
 One server process can manage a fleet. The LLM picks the target per tool call,
-so the 241-tool set is loaded into its context once rather than once per device.
+so the 91-tool set is loaded into its context once rather than once per device.
 
 Point `FORTIOS_INSTANCES_FILE` at a JSON array (see
 [`fortigates.example.json`](fortigates.example.json)):
@@ -279,14 +292,21 @@ Once installed, you can ask Claude natural-language questions such as:
 # List firewall policies filtered by action
 firewall_policy_list(filter_action="deny")
 
-# Get system status
-system_status()
+# Get system status (system_status was folded into system_read)
+system_read(resource="status")
 
 # Check IPsec VPN tunnels
 monitor_vpn_ipsec()
 
 # Query forward traffic logs for a specific source IP
 log_traffic_forward(srcip="10.10.1.100", rows=50)
+
+# Per-domain read tools cover everything the old *_list/*_get tools did
+security_read(resource="ips_sensor")                       # was ips_sensor_list()
+user_read(resource="local", name="alice")                  # was user_local_get(name="alice")
+
+# Delete any resource the read tools can list
+fortios_delete(resource="firewall_address", name="old-addr")  # was firewall_address_delete(name=...)
 
 # Generic: list any CMDB resource (full API coverage)
 cmdb_list("casb/profile")
@@ -306,22 +326,25 @@ fortinet-mcp-server/
 ├── fortios_client.py      # Async HTTP client (CMDB/Monitor/Log/Service)
 ├── instances.py           # Fleet configuration loading and the instance registry
 ├── tool_annotations.py    # ToolAnnotations categories (read-only vs. write hints)
+├── resources.py           # The FortiOS resource table behind the *_read tools
+├── tool_params.py         # Shared parameter models for the *_read tools
 ├── pyproject.toml         # Project metadata and dependencies
 ├── .env.example           # Environment variable template
 ├── README.md              # This file
 └── tools/
     ├── __init__.py
-    ├── generic.py         # Generic pass-through tools (all 1536 endpoints)
+    ├── _read.py           # read_resource() dispatcher shared by every *_read tool
+    ├── generic.py         # Generic pass-through tools (all 1536 endpoints) + fortios_delete
     ├── fleet.py           # fortigate_list fleet meta tool
-    ├── system.py          # System config + monitoring
-    ├── firewall.py        # Firewall policies, addresses, VIPs, sessions
-    ├── vpn.py             # IPsec + SSL VPN config and monitoring
-    ├── router.py          # Static routes, OSPF, BGP, SD-WAN
-    ├── user.py            # Local users, groups, RADIUS, LDAP, sessions
-    ├── monitor.py         # Network monitoring, FortiView, endpoint control
-    ├── log.py             # Log retrieval and configuration
-    ├── security.py        # IPS, AV, webfilter, DLP, WAF, ZTNA profiles
-    └── wireless.py        # WiFi APs, SSIDs, clients, rogue APs
+    ├── system.py          # System config + monitoring + system_read
+    ├── firewall.py        # Firewall policies, addresses, VIPs, sessions + firewall_read
+    ├── vpn.py             # IPsec + SSL VPN config and monitoring + vpn_read
+    ├── router.py          # Static routes, OSPF, BGP, SD-WAN + router_read
+    ├── user.py            # Local users, groups, RADIUS, LDAP, sessions + user_read
+    ├── monitor.py         # Network monitoring, FortiView, endpoint control + monitor_read
+    ├── log.py             # Log retrieval and configuration + log_read
+    ├── security.py        # IPS, AV, webfilter, DLP, WAF, ZTNA profiles + security_read
+    └── wireless.py        # WiFi APs, SSIDs, clients, rogue APs + wireless_read
 ```
 
 ---

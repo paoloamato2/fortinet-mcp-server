@@ -6,7 +6,8 @@ as Model Context Protocol tools.
 
 Architecture:
 - Generic CRUD tools (cover all 1536 endpoints directly)
-- Specific typed tools (cover the most important 150+ operations)
+- Nine per-domain ``<domain>_read`` tools (cover 125 read-only resources
+  via a `resource` enum) plus typed write tools for common operations
 - Async HTTP client with Bearer-token authentication
 
 Configuration (environment variables or .env file):
@@ -118,10 +119,13 @@ class TrimmedFastMCP(FastMCP):
     """``FastMCP`` that omits pydantic's ``title`` keys from tool schemas.
 
     Pydantic derives a ``title`` from every field name and one for the
-    argument model itself. Across 241 tools that is 26,191 characters of
-    ``"title": "Vdom"`` restating the JSON key beside it -- roughly 6,550
-    tokens on every request, for a field JSON Schema defines as
-    presentational.
+    argument model itself. When this trim was added, the server had 241
+    tools and removing every ``title`` key saved 26,191 characters --
+    roughly 6,550 tokens on every request -- for a field JSON Schema
+    defines as presentational. The tool surface has shrunk since (see
+    ``tests/test_documented_counts.py`` for the current count), but the
+    saving scales with however many tools and parameters are registered,
+    so this class stays worth keeping regardless of that number.
 
     ``Tool.from_function`` exposes no schema hook, so the trim happens at the
     one point where schemas are serialised: ``list_tools``, which
@@ -149,12 +153,17 @@ mcp = TrimmedFastMCP(
         "This server exposes the complete FortiOS REST API as MCP tools; it is "
         "built against the FortiOS 7.6 API, and the devices it manages may run "
         "different firmware versions. Never assume a version — read the running "
-        "one with system_status, or fortigate_list(check_health=True) for the "
+        'one with system_read(resource="status"), or '
+        "fortigate_list(check_health=True) for the "
         "whole fleet. "
         "\n\n" + roster_text(_IMPORT_INSTANCES) + "\n\n"
         "Tool categories:\n"
-        "- **Generic**: cmdb_list/get/create/update/delete, monitor_get/action, log_get, service_call\n"
+        "- **Generic**: cmdb_list/get/create/update/delete, monitor_get/action, "
+        "log_get, service_call, fortios_delete\n"
         "    → These cover ALL 1536 FortiOS API endpoints directly.\n"
+        "- **Per-domain reads**: system_read, firewall_read, vpn_read, router_read,\n"
+        "  user_read, monitor_read, log_read, security_read, wireless_read — each takes\n"
+        "  a `resource` enum; omit `name` to list, pass it to fetch one object.\n"
         "- **System**: interfaces, DNS, NTP, admins, DHCP, SNMP, certificates, VDOMs\n"
         "- **Firewall**: policies, addresses, services, VIPs, IP pools, schedules, sessions\n"
         "- **VPN**: IPsec Phase 1/2, SSL VPN portals/settings, tunnel control, certificates\n"
@@ -165,9 +174,9 @@ mcp = TrimmedFastMCP(
         "- **Security**: IPS, AV, webfilter, app control, DLP, email filter, DNS filter, WAF, ZTNA\n"
         "- **Wireless**: APs, SSIDs, Hotspot 2.0, connected clients, rogue AP detection\n"
         "\n"
-        "Always use specific typed tools when available. "
-        "Fall back to generic cmdb_list/cmdb_get/monitor_get for unlisted resources. "
-        "For destructive operations (delete, policy changes), confirm with the user first."
+        "Prefer a domain read tool or a typed write tool when one covers the "
+        "resource; fall back to cmdb_list/cmdb_get/monitor_get for endpoints "
+        "no enum lists. For destructive operations, confirm with the user first."
     ),
     lifespan=lifespan,
 )
@@ -188,7 +197,7 @@ security.register(mcp)
 wireless.register(mcp)
 fleet.register(mcp)
 
-logger.info("All 11 tool modules registered (241 tools).")
+logger.info("All 11 tool modules registered (91 tools).")
 
 
 # ─────────────────────────────────────────────────────────────────────

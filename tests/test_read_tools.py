@@ -8,7 +8,6 @@ comes back as a dict instead of propagating.
 
 from __future__ import annotations
 
-import asyncio
 from typing import Any, cast
 
 import pytest
@@ -176,10 +175,10 @@ EXPECTED_ENUM_SIZES = {
 
 
 @pytest.mark.parametrize("tool_name", sorted(EXPECTED_ENUM_SIZES))
-def test_read_tool_is_registered_and_read_only(tool_name: str) -> None:
+async def test_read_tool_is_registered_and_read_only(tool_name: str) -> None:
     from server import mcp
 
-    tools = {tool.name: tool for tool in asyncio.run(mcp.list_tools())}
+    tools = {tool.name: tool for tool in await mcp.list_tools()}
     assert tool_name in tools
     tool = tools[tool_name]
     assert tool.annotations is not None

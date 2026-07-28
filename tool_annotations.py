@@ -38,11 +38,11 @@ consequences worth stating outright:
 from mcp.types import ToolAnnotations
 
 #: Reads a FortiGate and changes nothing on it. The default for this
-#: server: 183 of 241 tools, every ``*_list``/``*_get``/``*_status``, the
-#: log-retrieval tools (all GETs) -- 17 of the 18 tools named ``log_*``; the
-#: one that writes is ``log_fortianalyzer_setting_update``, classified
-#: ``DESTRUCTIVE`` below -- ``monitor_system_config_backup``,
-#: ``monitor_network_ping`` and ``fortigate_list``.
+#: server: 47 of 91 tools -- the nine per-domain ``<domain>_read`` tools,
+#: the generic ``cmdb_list``/``cmdb_get``/``monitor_get``/``log_get``, most
+#: typed ``*_list``/``*_get`` readers, ``monitor_system_config_backup``,
+#: ``monitor_network_ping`` and ``fortigate_list``. A tool's name no longer
+#: reliably predicts this category -- read the annotation, not the name.
 READ_ONLY = ToolAnnotations(
     readOnlyHint=True,
     destructiveHint=False,
