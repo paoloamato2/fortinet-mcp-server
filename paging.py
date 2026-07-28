@@ -40,17 +40,39 @@ def normalise(start: int | None, count: int | None) -> tuple[int, int]:
         The effective ``(start, count)``.
 
     Raises:
-        PageError: If ``start`` is negative or ``count`` is below 1. Callers
-            convert this into the standard ``{"error": ...}`` payload rather
-            than contacting the device.
+        PageError: If either value is not an integer, or if ``start`` is
+            negative, or ``count`` is below 1. Callers convert this into the
+            standard ``{"error": ...}`` payload rather than contacting the
+            device.
     """
-    effective_start = 0 if start is None else start
-    effective_count = PAGE_ROWS if count is None else count
+    effective_start = 0 if start is None else _as_int("start", start)
+    effective_count = PAGE_ROWS if count is None else _as_int("count", count)
     if effective_start < 0:
         raise PageError(f"start must be 0 or greater, got {effective_start}.")
     if effective_count < 1:
         raise PageError(f"count must be 1 or greater, got {effective_count}.")
     return effective_start, effective_count
+
+
+def _as_int(field: str, value: Any) -> int:
+    """Return ``value`` as an int, or raise :class:`PageError`.
+
+    The typed tool parameters are validated by pydantic before they reach
+    here, but ``monitor_get`` also reads ``start``/``count`` out of the
+    caller's ``extra_params`` JSON, where they arrive untyped. A quoted number
+    -- ``{"start": "10"}`` -- would otherwise reach the comparison below and
+    raise ``TypeError``, which no tool's ``except PageError`` catches, so it
+    would escape to the MCP layer and break the rule that a tool returns its
+    errors rather than raising them.
+
+    ``bool`` is excluded deliberately: it subclasses ``int``, so ``True``
+    would otherwise pass as a row offset of 1.
+    """
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise PageError(
+            f"{field} must be an integer, got {type(value).__name__} {value!r}."
+        )
+    return value
 
 
 def page_query(start: int, count: int) -> dict[str, Any]:

@@ -53,6 +53,41 @@ def test_normalise_rejects_impossible_values(
         normalise(start, count)
 
 
+def test_normalise_accepts_the_lowest_valid_count() -> None:
+    """count=1 is a legitimate "just one row" probe, not an off-by-one."""
+    assert normalise(0, 1) == (0, 1)
+
+
+@pytest.mark.parametrize(
+    ("start", "count"),
+    [
+        ("10", None),
+        (None, "5"),
+        (1.5, None),
+        (None, 2.5),
+        (True, None),
+        (None, False),
+        ([], None),
+    ],
+)
+def test_normalise_rejects_non_integers_as_page_errors(
+    start: object, count: object
+) -> None:
+    """A non-integer must raise PageError, never TypeError.
+
+    ``monitor_get`` reads ``start``/``count`` out of the caller's
+    ``extra_params`` JSON, where they arrive untyped -- a quoted number like
+    ``{"start": "10"}`` is an easy caller mistake. Comparing that against 0
+    raises TypeError, which no tool's ``except PageError`` catches, so it
+    escapes to the MCP layer and breaks the rule that a tool returns errors
+    rather than raising. Booleans are rejected too: ``bool`` is a subclass of
+    ``int``, so ``True`` would otherwise sail through and be sent as a row
+    offset.
+    """
+    with pytest.raises(PageError):
+        normalise(start, count)  # type: ignore[arg-type]
+
+
 # ---------------------------------------------------------------- page_query
 
 
