@@ -49,6 +49,17 @@
 > `system_read(resource="status")`.
 
 - **80 typed MCP tools** organized by functional area (system, firewall, VPN, router, user, monitor, log, security, wireless), plus a fleet-management tool (`fortigate_list`) — nine of the 80 are per-domain `<domain>_read` tools that cover 121 read-only resources through a `resource` enum
+- **Reads are paged by default.** A list read returns at most 50 rows and at
+  most ~25,000 characters, whichever binds first, and reports what it did:
+
+  ```json
+  "_page": {"start": 0, "returned": 3, "more": true, "total": 77}
+  ```
+
+  Pass `start`/`count` to walk the rest. `total` is populated for CMDB reads
+  and is `null` for monitor endpoints, which do not report one. The character
+  cap applies even to an explicit `count`, so `count` is a ceiling rather than
+  a promise — `_page.returned` always reports what came back.
 - **10 generic pass-through tools** that cover all 1,536 FortiOS API endpoints, including the universal `fortios_delete`
 - Async HTTP client with Bearer-token authentication via `httpx`
 - Full support for **CMDB, Monitor, Log, and Service** API sections
