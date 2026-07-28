@@ -93,3 +93,38 @@ async def test_annotation_category_counts_match_reality() -> None:
     assert cited is not None, "tool_annotations.py should cite N of M tools"
     assert int(cited.group(2)) == 91
     assert int(cited.group(1)) == len(readers)
+
+
+def test_count_param_description_cites_the_real_default() -> None:
+    """``CountParam``'s prose ("default 50") must track ``PAGE_ROWS``.
+
+    A stale default here directly misleads the model calling the tool, not
+    just a human reading docs.
+    """
+    import typing
+
+    from paging import PAGE_ROWS
+    from tool_params import CountParam
+
+    field_info = typing.get_args(CountParam)[1]
+    assert str(PAGE_ROWS) in (field_info.description or ""), (
+        "CountParam's description no longer cites the real PAGE_ROWS default"
+    )
+
+
+def test_readme_cites_the_real_page_row_default() -> None:
+    from paging import PAGE_ROWS
+
+    text = (ROOT / "README.md").read_text(encoding="utf-8")
+    assert f"most {PAGE_ROWS} rows" in text, (
+        "README's paging bullet no longer cites the real PAGE_ROWS default"
+    )
+
+
+def test_readme_cites_the_real_char_budget() -> None:
+    from paging import PAGE_CHAR_BUDGET
+
+    text = (ROOT / "README.md").read_text(encoding="utf-8")
+    assert f"{PAGE_CHAR_BUDGET:,}" in text, (
+        "README's paging bullet no longer cites the real PAGE_CHAR_BUDGET"
+    )
