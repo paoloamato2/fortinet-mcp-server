@@ -12,47 +12,46 @@ from pydantic import Field
 
 from fortios_client import FortiOSError
 from instances import FortiOSAPI
+from resources import UserResource
 from tool_annotations import CREATES, DESTRUCTIVE, READ_ONLY
 from tool_params import InstanceParam, VdomParam
+from tools._read import read_resource, resource_table_doc
 
 
 def register(mcp: FastMCP) -> None:
     """Register all user management tools."""
 
+    async def user_read(
+        ctx: Context,
+        resource: Annotated[
+            UserResource, Field(description="Which user resource to read.")
+        ],
+        name: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Object key to fetch. Omit to list every object. "
+                    "Rejected for singletons and monitor endpoints."
+                ),
+            ),
+        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
+    ) -> dict[str, Any]:
+        """Placeholder replaced below with the generated resource table."""
+        return await read_resource(ctx, "user", resource, name, instance, vdom)
+
+    user_read.__doc__ = (
+        "Read user, group and authentication-server configuration.\n\n"
+        "Omit `name` to list a resource, or pass it to fetch one object by "
+        "key.\n\n" + resource_table_doc("user")
+    )
+    mcp.tool(annotations=READ_ONLY)(user_read)
+
     # ==================================================================
     # LOCAL USERS
     # ==================================================================
-
-    @mcp.tool(annotations=READ_ONLY)
-    async def user_local_list(
-        ctx: Context,
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """List all local user accounts."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.cmdb_get("user/local", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool(annotations=READ_ONLY)
-    async def user_local_get(
-        ctx: Context,
-        name: Annotated[str, Field(description="Local username.")],
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """Get a specific local user account."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.cmdb_get(f"user/local/{name}", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
 
     @mcp.tool(annotations=CREATES)
     async def user_local_create(
@@ -167,37 +166,6 @@ def register(mcp: FastMCP) -> None:
     # USER GROUPS
     # ==================================================================
 
-    @mcp.tool(annotations=READ_ONLY)
-    async def user_group_list(
-        ctx: Context,
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """List all user groups."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.cmdb_get("user/group", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool(annotations=READ_ONLY)
-    async def user_group_get(
-        ctx: Context,
-        name: Annotated[str, Field(description="User group name.")],
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """Get a specific user group and its members."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.cmdb_get(f"user/group/{name}", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
     @mcp.tool(annotations=CREATES)
     async def user_group_create(
         ctx: Context,
@@ -259,37 +227,6 @@ def register(mcp: FastMCP) -> None:
     # RADIUS SERVERS
     # ==================================================================
 
-    @mcp.tool(annotations=READ_ONLY)
-    async def user_radius_list(
-        ctx: Context,
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """List all RADIUS authentication server configurations."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.cmdb_get("user/radius", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool(annotations=READ_ONLY)
-    async def user_radius_get(
-        ctx: Context,
-        name: Annotated[str, Field(description="RADIUS server name.")],
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """Get a specific RADIUS server configuration."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.cmdb_get(f"user/radius/{name}", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
     @mcp.tool(annotations=CREATES)
     async def user_radius_create(
         ctx: Context,
@@ -332,21 +269,6 @@ def register(mcp: FastMCP) -> None:
     # ==================================================================
     # LDAP SERVERS
     # ==================================================================
-
-    @mcp.tool(annotations=READ_ONLY)
-    async def user_ldap_list(
-        ctx: Context,
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """List all LDAP authentication server configurations."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.cmdb_get("user/ldap", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
 
     @mcp.tool(annotations=CREATES)
     async def user_ldap_create(
@@ -403,44 +325,6 @@ def register(mcp: FastMCP) -> None:
             return {"error": str(exc), "status_code": exc.status_code}
 
     # ==================================================================
-    # TACACS+ SERVERS
-    # ==================================================================
-
-    @mcp.tool(annotations=READ_ONLY)
-    async def user_tacacs_list(
-        ctx: Context,
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """List all TACACS+ authentication server configurations."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.cmdb_get("user/tacacs+", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    # ==================================================================
-    # SAML / SSO
-    # ==================================================================
-
-    @mcp.tool(annotations=READ_ONLY)
-    async def user_saml_list(
-        ctx: Context,
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """List all SAML identity provider configurations."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.cmdb_get("user/saml", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    # ==================================================================
     # MONITOR: User Sessions
     # ==================================================================
 
@@ -467,21 +351,6 @@ def register(mcp: FastMCP) -> None:
             params["username"] = username
         try:
             return await client.monitor_get("user/firewall", params or None, vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool(annotations=READ_ONLY)
-    async def monitor_user_fortitoken_list(
-        ctx: Context,
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """List FortiToken hardware/software tokens and their status."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.monitor_get("user/fortitoken", vdom=vdom)
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 

@@ -18,12 +18,45 @@ MODULES_WITHOUT_INSTANCE_PARAM = {"fleet.py"}
 
 
 def _tool_functions(path: Path) -> list[ast.AsyncFunctionDef | ast.FunctionDef]:
-    found: list[ast.AsyncFunctionDef | ast.FunctionDef] = []
-    for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
-        if not isinstance(node, (ast.AsyncFunctionDef, ast.FunctionDef)):
-            continue
-        if any("mcp.tool" in ast.unparse(d) for d in node.decorator_list):
-            found.append(node)
+    """Every function in ``path`` registered as an MCP tool.
+
+    Most tools use ``@mcp.tool(...)`` decorator syntax. A tool whose
+    description is built at runtime (a generated resource table appended to
+    ``__doc__``) cannot use it -- a docstring must be a literal -- so it is
+    defined undecorated and registered by an explicit ``mcp.tool(...)(name)``
+    call instead (see ``user_read`` in ``tools/user.py``). This counts both
+    forms, so the guards below still see a tool registered the second way.
+
+    Duplicates the helper of the same name in
+    ``tests/test_tool_annotations.py`` rather than importing it, so this
+    file's structural guard does not depend on that file's internals.
+    """
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+    by_name: dict[str, ast.AsyncFunctionDef | ast.FunctionDef] = {}
+    decorated: list[ast.AsyncFunctionDef | ast.FunctionDef] = []
+    registered_by_call: set[str] = set()
+
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.AsyncFunctionDef, ast.FunctionDef)):
+            by_name[node.name] = node
+            if any("mcp.tool" in ast.unparse(d) for d in node.decorator_list):
+                decorated.append(node)
+        elif (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Call)
+            and "mcp.tool" in ast.unparse(node.func)
+            and len(node.args) == 1
+            and isinstance(node.args[0], ast.Name)
+        ):
+            registered_by_call.add(node.args[0].id)
+
+    decorated_names = {fn.name for fn in decorated}
+    found = list(decorated)
+    found.extend(
+        by_name[name]
+        for name in sorted(registered_by_call)
+        if name in by_name and name not in decorated_names
+    )
     return found
 
 
@@ -76,5 +109,7 @@ def test_no_tool_still_reads_the_legacy_client_key() -> None:
 def test_expected_number_of_tools_is_registered() -> None:
     total = sum(len(_tool_functions(p)) for p in _tool_modules())
 
-    # 240 FortiOS tools + fortigate_list
-    assert total == 241
+    # 231 FortiOS tools + fortigate_list, since the ten user tools user_read
+    # replaced folded into one (see tests/test_tool_annotations.py's
+    # EXPECTED_TOOL_COUNT for the running total across the collapse).
+    assert total == 232

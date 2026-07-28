@@ -64,22 +64,49 @@ POSTS_WITHOUT_MUTATING = {"monitor_network_ping"}
 #: Registered tool count. Two contracts below assert against it, so the
 #: collapse moves this one line per task rather than hunting literals:
 #: 241 -> 232 (user_read) -> 105 (the other eight) -> 91 (fortios_delete).
-EXPECTED_TOOL_COUNT = 241
+EXPECTED_TOOL_COUNT = 232
 
 
 def _tool_functions(path: Path) -> list[ast.AsyncFunctionDef | ast.FunctionDef]:
-    """Every function in ``path`` decorated with ``@mcp.tool(...)``.
+    """Every function in ``path`` registered as an MCP tool.
+
+    Most tools use ``@mcp.tool(...)`` decorator syntax. A tool whose
+    description is built at runtime (a generated resource table appended to
+    ``__doc__``) cannot use it -- a docstring must be a literal -- so it is
+    defined undecorated and registered by an explicit ``mcp.tool(...)(name)``
+    call instead (see ``user_read`` in ``tools/user.py``). This counts both
+    forms, so the guards below still see a tool registered the second way.
 
     Duplicates the helper of the same name in
     ``tests/test_tools_have_instance_param.py`` rather than importing it, so
     this file's behaviour guard does not depend on that file's internals.
     """
-    found: list[ast.AsyncFunctionDef | ast.FunctionDef] = []
-    for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
-        if not isinstance(node, (ast.AsyncFunctionDef, ast.FunctionDef)):
-            continue
-        if any("mcp.tool" in ast.unparse(d) for d in node.decorator_list):
-            found.append(node)
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+    by_name: dict[str, ast.AsyncFunctionDef | ast.FunctionDef] = {}
+    decorated: list[ast.AsyncFunctionDef | ast.FunctionDef] = []
+    registered_by_call: set[str] = set()
+
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.AsyncFunctionDef, ast.FunctionDef)):
+            by_name[node.name] = node
+            if any("mcp.tool" in ast.unparse(d) for d in node.decorator_list):
+                decorated.append(node)
+        elif (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Call)
+            and "mcp.tool" in ast.unparse(node.func)
+            and len(node.args) == 1
+            and isinstance(node.args[0], ast.Name)
+        ):
+            registered_by_call.add(node.args[0].id)
+
+    decorated_names = {fn.name for fn in decorated}
+    found = list(decorated)
+    found.extend(
+        by_name[name]
+        for name in sorted(registered_by_call)
+        if name in by_name and name not in decorated_names
+    )
     return found
 
 

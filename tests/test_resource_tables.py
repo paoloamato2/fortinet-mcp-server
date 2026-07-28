@@ -15,7 +15,6 @@ from resources import (
     SINGLETON_PATHS,
     Resource,
 )
-from server import mcp
 
 EXPECTED_ROW_COUNTS = {
     "firewall": 15,
@@ -229,9 +228,3 @@ def test_literal_aliases_match_the_table_keys() -> None:
             f"{alias_name} drifted from READ_RESOURCES[{domain!r}]"
         )
     assert set(typing.get_args(resources.DeletableResource)) == set(DELETE_RESOURCES)
-
-
-async def test_the_table_does_not_change_the_surface_yet() -> None:
-    """This task adds data only -- no tool is added or removed."""
-    tools = await mcp.list_tools()
-    assert len(tools) == 241
