@@ -16,6 +16,7 @@ from pydantic import Field
 from fortios_client import FortiOSError
 from instances import FortiOSAPI
 from tool_annotations import CREATES, DESTRUCTIVE, READ_ONLY, UNCONSTRAINED
+from tool_params import InstanceParam, VdomParam
 
 
 def register(mcp: FastMCP) -> None:  # noqa: C901
@@ -65,23 +66,8 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
                 description="Comma-separated list of fields to return. Reduces response size.",
             ),
         ] = None,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """List all objects of a CMDB resource type.
 
@@ -121,23 +107,8 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
                 )
             ),
         ],
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Get a single CMDB configuration object by its primary key.
 
@@ -174,23 +145,8 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
                 )
             ),
         ],
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Create a new CMDB configuration object (POST).
 
@@ -230,23 +186,8 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
                 )
             ),
         ],
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Update/replace a CMDB configuration object (PUT).
 
@@ -277,23 +218,8 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
                 )
             ),
         ],
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Delete a CMDB configuration object.
 
@@ -335,23 +261,8 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
                 ),
             ),
         ] = None,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Retrieve real-time operational data from any monitor endpoint.
 
@@ -396,23 +307,8 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
                 ),
             ),
         ] = None,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Trigger a monitor action (POST) on any monitor endpoint.
 
@@ -460,23 +356,8 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
                 ),
             ),
         ] = None,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Retrieve log entries from disk, memory, FortiAnalyzer, or FortiCloud.
 
@@ -529,23 +410,8 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
                 description="Optional JSON body for POST requests.",
             ),
         ] = None,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Call any FortiOS Service API endpoint.
 

@@ -16,6 +16,7 @@ from pydantic import Field
 from fortios_client import FortiOSError
 from instances import FortiOSAPI
 from tool_annotations import CREATES, DESTRUCTIVE, READ_ONLY
+from tool_params import InstanceParam, VdomParam
 
 
 def register(mcp: FastMCP) -> None:
@@ -28,23 +29,8 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool(annotations=READ_ONLY)
     async def ips_sensor_list(
         ctx: Context,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """List all IPS sensor profiles."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -59,23 +45,8 @@ def register(mcp: FastMCP) -> None:
     async def ips_sensor_get(
         ctx: Context,
         name: Annotated[str, Field(description="IPS sensor name.")],
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Get a specific IPS sensor profile."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -100,23 +71,8 @@ def register(mcp: FastMCP) -> None:
         comment: Annotated[
             str | None, Field(default=None, description="Comment.")
         ] = None,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Create a new IPS sensor profile."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -137,23 +93,8 @@ def register(mcp: FastMCP) -> None:
     async def ips_sensor_delete(
         ctx: Context,
         name: Annotated[str, Field(description="IPS sensor name to delete.")],
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Delete an IPS sensor profile."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -167,23 +108,8 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool(annotations=READ_ONLY)
     async def ips_custom_list(
         ctx: Context,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """List all custom IPS signatures."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -201,23 +127,8 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool(annotations=READ_ONLY)
     async def antivirus_profile_list(
         ctx: Context,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """List all antivirus profiles."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -232,23 +143,8 @@ def register(mcp: FastMCP) -> None:
     async def antivirus_profile_get(
         ctx: Context,
         name: Annotated[str, Field(description="Antivirus profile name.")],
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Get a specific antivirus profile."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -273,23 +169,8 @@ def register(mcp: FastMCP) -> None:
                 description="FortiSandbox analytics: disable, suspicious, or all.",
             ),
         ] = "disable",
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Create a new antivirus profile."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -306,23 +187,8 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool(annotations=READ_ONLY)
     async def antivirus_settings_get(
         ctx: Context,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Get antivirus engine settings (scan cache, exclusions)."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -340,23 +206,8 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool(annotations=READ_ONLY)
     async def webfilter_profile_list(
         ctx: Context,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """List all web filter profiles."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -371,23 +222,8 @@ def register(mcp: FastMCP) -> None:
     async def webfilter_profile_get(
         ctx: Context,
         name: Annotated[str, Field(description="Web filter profile name.")],
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Get a specific web filter profile."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -401,23 +237,8 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool(annotations=READ_ONLY)
     async def webfilter_urlfilter_list(
         ctx: Context,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """List all URL filter tables (custom URL block/allow lists)."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -431,23 +252,8 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool(annotations=READ_ONLY)
     async def webfilter_override_list(
         ctx: Context,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """List all web filter category override rules."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -461,23 +267,8 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool(annotations=READ_ONLY)
     async def webfilter_content_list(
         ctx: Context,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """List all web content filter (keyword) tables."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -495,23 +286,8 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool(annotations=READ_ONLY)
     async def application_list_profiles(
         ctx: Context,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """List all Application Control profiles."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -526,23 +302,8 @@ def register(mcp: FastMCP) -> None:
     async def application_list_get(
         ctx: Context,
         name: Annotated[str, Field(description="Application profile name.")],
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Get a specific Application Control profile."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -556,23 +317,8 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool(annotations=READ_ONLY)
     async def application_group_list(
         ctx: Context,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """List all application groups."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -590,23 +336,8 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool(annotations=READ_ONLY)
     async def dlp_sensor_list(
         ctx: Context,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """List all DLP sensors."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -620,23 +351,8 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool(annotations=READ_ONLY)
     async def dlp_dictionary_list(
         ctx: Context,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """List all DLP data dictionaries."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -650,23 +366,8 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool(annotations=READ_ONLY)
     async def dlp_filepattern_list(
         ctx: Context,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """List all DLP file pattern tables."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -684,23 +385,8 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool(annotations=READ_ONLY)
     async def emailfilter_profile_list(
         ctx: Context,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """List all email filter profiles."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -714,23 +400,8 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool(annotations=READ_ONLY)
     async def emailfilter_bwl_list(
         ctx: Context,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """List email filter block/allow lists."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -748,23 +419,8 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool(annotations=READ_ONLY)
     async def dnsfilter_profile_list(
         ctx: Context,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """List all DNS filter profiles."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -778,23 +434,8 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool(annotations=READ_ONLY)
     async def dnsfilter_domain_filter_list(
         ctx: Context,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """List DNS domain filter tables (custom domain block/allow)."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -812,23 +453,8 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool(annotations=READ_ONLY)
     async def file_filter_profile_list(
         ctx: Context,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """List all file filter profiles."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -846,23 +472,8 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool(annotations=READ_ONLY)
     async def icap_server_list(
         ctx: Context,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """List all ICAP server configurations."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -876,23 +487,8 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool(annotations=READ_ONLY)
     async def icap_profile_list(
         ctx: Context,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """List all ICAP profiles."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -910,23 +506,8 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool(annotations=READ_ONLY)
     async def ssh_filter_profile_list(
         ctx: Context,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """List all SSH filter profiles."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -944,23 +525,8 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool(annotations=READ_ONLY)
     async def waf_profile_list(
         ctx: Context,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """List all WAF profiles."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -974,23 +540,8 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool(annotations=READ_ONLY)
     async def waf_signature_list(
         ctx: Context,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """List all WAF signature configurations."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -1008,23 +559,8 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool(annotations=READ_ONLY)
     async def voip_profile_list(
         ctx: Context,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """List all VoIP (SIP/SCCP) inspection profiles."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -1042,23 +578,8 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool(annotations=READ_ONLY)
     async def virtual_patch_profile_list(
         ctx: Context,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """List all Virtual Patch profiles (inline IPS pre-patching)."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -1076,23 +597,8 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool(annotations=READ_ONLY)
     async def automation_setting_get(
         ctx: Context,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Get global automation settings."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -1110,23 +616,8 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool(annotations=READ_ONLY)
     async def ztna_server_list(
         ctx: Context,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """List all ZTNA access proxy (application gateway) servers."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -1140,23 +631,8 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool(annotations=READ_ONLY)
     async def ztna_tag_policy_list(
         ctx: Context,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """List all ZTNA EMS tag (posture check) policies."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(

@@ -14,6 +14,7 @@ from pydantic import Field
 from fortios_client import FortiOSError
 from instances import FortiOSAPI
 from tool_annotations import DESTRUCTIVE, READ_ONLY
+from tool_params import InstanceParam, VdomParam
 
 
 # Log source backends
@@ -101,23 +102,8 @@ def register(mcp: FastMCP) -> None:
             dict[str, Any] | None,
             Field(default=None, description="Additional query parameters as a dict."),
         ] = None,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Query logs from FortiOS with flexible filtering.
 
@@ -175,23 +161,8 @@ def register(mcp: FastMCP) -> None:
         source: Annotated[
             str, Field(default="disk", description="Log source: disk or memory.")
         ] = "disk",
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Query forward traffic logs with optional per-field filters."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -226,23 +197,8 @@ def register(mcp: FastMCP) -> None:
         source: Annotated[
             str, Field(default="disk", description="Log source: disk or memory.")
         ] = "disk",
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Query local traffic logs (traffic to/from the FortiGate itself)."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -269,23 +225,8 @@ def register(mcp: FastMCP) -> None:
         source: Annotated[
             str, Field(default="disk", description="Log source: disk or memory.")
         ] = "disk",
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Query system event logs (admin logins, config changes, system alerts)."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -308,23 +249,8 @@ def register(mcp: FastMCP) -> None:
         source: Annotated[
             str, Field(default="disk", description="Log source: disk or memory.")
         ] = "disk",
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Query VPN event logs (IPsec SA negotiations, SSL VPN logins/logouts)."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -350,23 +276,8 @@ def register(mcp: FastMCP) -> None:
         source: Annotated[
             str, Field(default="disk", description="Log source: disk or memory.")
         ] = "disk",
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Query user authentication event logs."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -394,23 +305,8 @@ def register(mcp: FastMCP) -> None:
         source: Annotated[
             str, Field(default="disk", description="Log source: disk or memory.")
         ] = "disk",
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Query antivirus threat logs."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -445,23 +341,8 @@ def register(mcp: FastMCP) -> None:
         source: Annotated[
             str, Field(default="disk", description="Log source: disk or memory.")
         ] = "disk",
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Query web filter (URL category/block) logs."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -488,23 +369,8 @@ def register(mcp: FastMCP) -> None:
         source: Annotated[
             str, Field(default="disk", description="Log source: disk or memory.")
         ] = "disk",
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Query IPS intrusion detection/prevention attack logs."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -532,23 +398,8 @@ def register(mcp: FastMCP) -> None:
         source: Annotated[
             str, Field(default="disk", description="Log source: disk or memory.")
         ] = "disk",
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Query Application Control logs."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -572,23 +423,8 @@ def register(mcp: FastMCP) -> None:
         source: Annotated[
             str, Field(default="disk", description="Log source: disk or memory.")
         ] = "disk",
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Query DNS filter logs."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -608,23 +444,8 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool(annotations=READ_ONLY)
     async def log_disk_filter_get(
         ctx: Context,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Get the disk log filter settings (which log types are enabled)."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -638,23 +459,8 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool(annotations=READ_ONLY)
     async def log_disk_setting_get(
         ctx: Context,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Get the disk logging settings (log level, max log size, etc.)."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -668,23 +474,8 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool(annotations=READ_ONLY)
     async def log_memory_setting_get(
         ctx: Context,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Get the memory logging settings."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -698,23 +489,8 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool(annotations=READ_ONLY)
     async def log_fortianalyzer_setting_get(
         ctx: Context,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Get FortiAnalyzer logging configuration (server, port, status)."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -742,23 +518,8 @@ def register(mcp: FastMCP) -> None:
                 description="Encryption algorithm: default, high, low, disable.",
             ),
         ] = None,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Update FortiAnalyzer logging settings."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(

@@ -17,6 +17,7 @@ from pydantic import Field
 from fortios_client import FortiOSError
 from instances import FortiOSAPI
 from tool_annotations import CREATES, DESTRUCTIVE, READ_ONLY, UPDATES
+from tool_params import InstanceParam, VdomParam
 
 
 def register(mcp: FastMCP) -> None:
@@ -29,23 +30,8 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool(annotations=READ_ONLY)
     async def vpn_ipsec_phase1_list(
         ctx: Context,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """List all IPsec VPN Phase 1 (IKE gateway) interfaces."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -60,23 +46,8 @@ def register(mcp: FastMCP) -> None:
     async def vpn_ipsec_phase1_get(
         ctx: Context,
         name: Annotated[str, Field(description="Phase 1 tunnel name.")],
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Get a specific IPsec Phase 1 interface configuration."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -127,23 +98,8 @@ def register(mcp: FastMCP) -> None:
                 description="Use VPN gateway as network device: enable or disable.",
             ),
         ] = "disable",
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Create a new IPsec VPN Phase 1 interface (IKEv1/IKEv2 gateway)."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -184,23 +140,8 @@ def register(mcp: FastMCP) -> None:
         comments: Annotated[
             str | None, Field(default=None, description="New comment.")
         ] = None,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Update an existing IPsec Phase 1 interface."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -228,23 +169,8 @@ def register(mcp: FastMCP) -> None:
     async def vpn_ipsec_phase1_delete(
         ctx: Context,
         name: Annotated[str, Field(description="Phase 1 tunnel name to delete.")],
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Delete an IPsec Phase 1 tunnel interface."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -264,23 +190,8 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool(annotations=READ_ONLY)
     async def vpn_ipsec_phase2_list(
         ctx: Context,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """List all IPsec VPN Phase 2 (SA / child SA) selectors."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -295,23 +206,8 @@ def register(mcp: FastMCP) -> None:
     async def vpn_ipsec_phase2_get(
         ctx: Context,
         name: Annotated[str, Field(description="Phase 2 selector name.")],
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Get a specific IPsec Phase 2 selector configuration."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -365,23 +261,8 @@ def register(mcp: FastMCP) -> None:
         comments: Annotated[
             str | None, Field(default=None, description="Comment.")
         ] = None,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Create a new IPsec VPN Phase 2 selector."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -417,23 +298,8 @@ def register(mcp: FastMCP) -> None:
     async def vpn_ipsec_phase2_delete(
         ctx: Context,
         name: Annotated[str, Field(description="Phase 2 selector name to delete.")],
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Delete an IPsec Phase 2 selector."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -453,23 +319,8 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool(annotations=READ_ONLY)
     async def vpn_ssl_settings_get(
         ctx: Context,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Get SSL VPN global settings (port, certificates, idle timeout, etc.)."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -505,23 +356,8 @@ def register(mcp: FastMCP) -> None:
             int | None,
             Field(default=None, description="Max login failures before lockout."),
         ] = None,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Update SSL VPN global settings."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -548,23 +384,8 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool(annotations=READ_ONLY)
     async def vpn_ssl_portal_list(
         ctx: Context,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """List all SSL VPN portals."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -579,23 +400,8 @@ def register(mcp: FastMCP) -> None:
     async def vpn_ssl_portal_get(
         ctx: Context,
         name: Annotated[str, Field(description="SSL VPN portal name.")],
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Get a specific SSL VPN portal configuration."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -640,23 +446,8 @@ def register(mcp: FastMCP) -> None:
         heading: Annotated[
             str | None, Field(default=None, description="Portal heading/title.")
         ] = None,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Create a new SSL VPN portal."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -683,23 +474,8 @@ def register(mcp: FastMCP) -> None:
     async def vpn_ssl_portal_delete(
         ctx: Context,
         name: Annotated[str, Field(description="SSL VPN portal name to delete.")],
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Delete an SSL VPN portal."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -713,23 +489,8 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool(annotations=READ_ONLY)
     async def vpn_ssl_web_host_check_software_list(
         ctx: Context,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """List SSL VPN host check software (endpoint compliance) rules."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -747,23 +508,8 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool(annotations=READ_ONLY)
     async def vpn_certificate_ca_list(
         ctx: Context,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """List all VPN CA certificates."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -777,23 +523,8 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool(annotations=READ_ONLY)
     async def vpn_certificate_local_list(
         ctx: Context,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """List all VPN local (device) certificates."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -807,23 +538,8 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool(annotations=READ_ONLY)
     async def vpn_certificate_remote_list(
         ctx: Context,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """List all remote (peer) VPN certificates."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -837,23 +553,8 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool(annotations=READ_ONLY)
     async def vpn_certificate_ocsp_server_list(
         ctx: Context,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """List OCSP server configurations for certificate revocation checking."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -871,23 +572,8 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool(annotations=READ_ONLY)
     async def monitor_vpn_ipsec(
         ctx: Context,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Get status of all IPsec VPN tunnels (up/down, bytes transferred, SAs)."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -904,23 +590,8 @@ def register(mcp: FastMCP) -> None:
         tunnel_name: Annotated[
             str, Field(description="IPsec tunnel (Phase 1) name to bring up.")
         ],
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Bring up (activate) an IPsec VPN tunnel."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -939,23 +610,8 @@ def register(mcp: FastMCP) -> None:
         tunnel_name: Annotated[
             str, Field(description="IPsec tunnel name to bring down.")
         ],
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Bring down (deactivate) an IPsec VPN tunnel."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -971,23 +627,8 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool(annotations=READ_ONLY)
     async def monitor_vpn_ssl_list(
         ctx: Context,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """List active SSL VPN sessions."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -1009,23 +650,8 @@ def register(mcp: FastMCP) -> None:
                 description="Session index (use if multiple sessions for same user).",
             ),
         ] = None,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Terminate (disconnect) an active SSL VPN user session."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
@@ -1042,23 +668,8 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool(annotations=READ_ONLY)
     async def monitor_vpn_certificate_valid(
         ctx: Context,
-        instance: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description=(
-                    "Target FortiGate name; see fortigate_list. "
-                    "Omit if only one is configured. '*' = all (reads only)."
-                ),
-            ),
-        ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Check validity status of all VPN-related certificates."""
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
