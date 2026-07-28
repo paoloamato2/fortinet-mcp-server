@@ -22,7 +22,7 @@ class FortiOSError(Exception):
 
 
 class FortiOSClient:
-    """Async client for the FortiOS 7.6.6 REST API (v2).
+    """Async client for the FortiOS 7.6 REST API (v2).
 
     Supports all four API sections:
     - ``/api/v2/cmdb/``   — Configuration Management DB (read/write)

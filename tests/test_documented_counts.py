@@ -2,7 +2,10 @@
 
 Four documents and one module docstring state how many tools this server has.
 They drifted the moment the surface changed, and a stale "241 tools" in the
-README is the kind of thing nobody notices for months.
+README is the kind of thing nobody notices for months. The same drift hit
+``instances.py`` (a pre-collapse "240 tool call sites" claim) and the
+``server.py``/``fortios_client.py`` docstrings (a patch-level "7.6.6" the
+fleet cannot guarantee), so those claims are pinned here too.
 
 ``CLAUDE.md`` is deliberately excluded from ``DOCS``: it is listed in
 ``.git/info/exclude`` alongside ``.claude/`` and ``.mcp.json``, so a fresh
@@ -53,6 +56,30 @@ def test_instructions_no_longer_name_a_removed_tool() -> None:
     instructions = text[text.index("instructions=(") :]
     assert "system_status" not in instructions
     assert "system_read" in instructions
+
+
+def test_no_module_docstring_pins_a_patch_level_firmware_version() -> None:
+    """The fleet may run mixed firmware; prose says "7.6", never "7.6.6"."""
+    offenders: list[str] = []
+    for name in ("server.py", "fortios_client.py"):
+        text = (ROOT / name).read_text(encoding="utf-8")
+        for match in re.findall(r"7\.6\.\d+", text):
+            offenders.append(f"{name}: {match!r}")
+    assert offenders == [], f"patch-level version claims in prose: {offenders}"
+
+
+async def test_instances_docstring_cites_the_real_instance_tool_count() -> None:
+    """``ErrorClient``'s docstring justifies ``resolve()`` with a tool count."""
+    tools = await mcp.list_tools()
+    with_instance = [
+        t for t in tools if "instance" in (t.inputSchema.get("properties") or {})
+    ]
+    text = (ROOT / "instances.py").read_text(encoding="utf-8")
+    cited = re.search(r"the (\d+) tools that take an ``instance`` parameter", text)
+    assert cited is not None, (
+        "instances.py should cite how many tools take an instance parameter"
+    )
+    assert int(cited.group(1)) == len(with_instance)
 
 
 async def test_annotation_category_counts_match_reality() -> None:

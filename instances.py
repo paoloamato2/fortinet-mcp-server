@@ -411,7 +411,8 @@ class ErrorClient:
     block each tool already has converts the resolution failure into the
     standard ``{"error": ..., "status_code": ...}`` payload. This is why
     :meth:`InstanceRegistry.resolve` can promise never to raise, even though
-    the 240 tool call sites look it up outside their ``try`` blocks.
+    the 90 tools that take an ``instance`` parameter look it up outside their
+    ``try`` blocks.
     """
 
     def __init__(self, message: str, status_code: int = 0) -> None:

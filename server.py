@@ -1,6 +1,6 @@
-"""FortiOS 7.6.6 MCP Server — Complete REST API implementation.
+"""FortiOS 7.6 MCP Server — Complete REST API implementation.
 
-This server exposes the entire Fortinet FortiOS 7.6.6 REST API
+This server exposes the entire Fortinet FortiOS 7.6 REST API
 (1536 endpoints across CMDB, Monitor, Log, and Service sections)
 as Model Context Protocol tools.
 
