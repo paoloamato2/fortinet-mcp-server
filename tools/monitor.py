@@ -13,46 +13,46 @@ from pydantic import Field
 
 from fortios_client import FortiOSError
 from instances import FortiOSAPI
+from resources import MonitorResource
 from tool_annotations import READ_ONLY
 from tool_params import InstanceParam, VdomParam
+from tools._read import read_resource, resource_table_doc
 
 
 def register(mcp: FastMCP) -> None:
     """Register all monitoring tools."""
 
+    async def monitor_read(
+        ctx: Context,
+        resource: Annotated[
+            MonitorResource, Field(description="Which monitor resource to read.")
+        ],
+        name: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Object key to fetch. Omit to list every object. "
+                    "Rejected for singletons and monitor endpoints."
+                ),
+            ),
+        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
+    ) -> dict[str, Any]:
+        """Placeholder replaced below with the generated resource table."""
+        return await read_resource(ctx, "monitor", resource, name, instance, vdom)
+
+    monitor_read.__doc__ = (
+        "Read live device, network and security telemetry.\n\n"
+        "Omit `name` to list a resource, or pass it to fetch one object by "
+        "key.\n\n" + resource_table_doc("monitor")
+    )
+    mcp.tool(annotations=READ_ONLY)(monitor_read)
+
     # ==================================================================
     # NETWORK
     # ==================================================================
-
-    @mcp.tool(annotations=READ_ONLY)
-    async def monitor_network_arp_list(
-        ctx: Context,
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """Get the ARP table (IP-to-MAC address mappings)."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.monitor_get("network/arp", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool(annotations=READ_ONLY)
-    async def monitor_network_lldp_neighbors(
-        ctx: Context,
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """Get LLDP neighbor information discovered on all interfaces."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.monitor_get("network/lldp/neighbors", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
 
     @mcp.tool(annotations=READ_ONLY)
     async def monitor_interface_dhcp_status(
@@ -144,75 +144,9 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool(annotations=READ_ONLY)
-    async def monitor_fortiview_top_threat_map(
-        ctx: Context,
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """Get FortiView threat map data (geo-blocking source countries)."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.monitor_get(
-                "fortiview/statistics", {"type": "threat"}, vdom=vdom
-            )
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    # ==================================================================
-    # LICENSE / FORTIGUARD STATUS
-    # ==================================================================
-
-    @mcp.tool(annotations=READ_ONLY)
-    async def monitor_license_status(
-        ctx: Context,
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """Get FortiGuard license and subscription status for all services."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.monitor_get("license/status", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool(annotations=READ_ONLY)
-    async def monitor_license_forticare_resellers(
-        ctx: Context,
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """Get FortiCare reseller and support contract information."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.monitor_get("license/forticare-resellers", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
     # ==================================================================
     # ENDPOINT CONTROL
     # ==================================================================
-
-    @mcp.tool(annotations=READ_ONLY)
-    async def monitor_endpoint_summary(
-        ctx: Context,
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """Get endpoint control (FortiClient) summary statistics."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.monitor_get("endpoint-control/summary", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
 
     @mcp.tool(annotations=READ_ONLY)
     async def monitor_endpoint_record_list(
@@ -235,59 +169,8 @@ def register(mcp: FastMCP) -> None:
             return {"error": str(exc), "status_code": exc.status_code}
 
     # ==================================================================
-    # IPS / UTM
-    # ==================================================================
-
-    @mcp.tool(annotations=READ_ONLY)
-    async def monitor_ips_anomaly(
-        ctx: Context,
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """Get IPS anomaly detection statistics."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.monitor_get("ips/anomaly", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool(annotations=READ_ONLY)
-    async def monitor_utm_app_categories(
-        ctx: Context,
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """Get UTM application category statistics."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.monitor_get("utm/app-lookup", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    # ==================================================================
     # SWITCH CONTROLLER
     # ==================================================================
-
-    @mcp.tool(annotations=READ_ONLY)
-    async def monitor_switch_controller_managed_switch(
-        ctx: Context,
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """Get status of all FortiSwitch managed switches."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.monitor_get(
-                "switch-controller/managed-switch", vdom=vdom
-            )
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
 
     @mcp.tool(annotations=READ_ONLY)
     async def monitor_switch_controller_port_stats(
@@ -310,25 +193,6 @@ def register(mcp: FastMCP) -> None:
             return await client.monitor_get(
                 "switch-controller/port-stats", params or None, vdom=vdom
             )
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    # ==================================================================
-    # SECURITY RATING
-    # ==================================================================
-
-    @mcp.tool(annotations=READ_ONLY)
-    async def monitor_security_rating_summary(
-        ctx: Context,
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """Get the Security Rating summary score and findings."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.monitor_get("system/security-rating", vdom=vdom)
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
@@ -361,25 +225,6 @@ def register(mcp: FastMCP) -> None:
             params["vdom"] = vdom
         try:
             return await client.monitor_get("system/config/backup", params, vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    # ==================================================================
-    # RUNNING PROCESSES
-    # ==================================================================
-
-    @mcp.tool(annotations=READ_ONLY)
-    async def monitor_system_process_list(
-        ctx: Context,
-        instance: InstanceParam = None,
-        vdom: VdomParam = None,
-    ) -> dict[str, Any]:
-        """List running FortiOS processes with CPU and memory usage."""
-        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
-            instance
-        )
-        try:
-            return await client.monitor_get("system/running-processes", vdom=vdom)
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
