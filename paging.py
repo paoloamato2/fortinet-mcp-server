@@ -84,11 +84,18 @@ def paginate(payload: dict[str, Any], start: int, count: int) -> dict[str, Any]:
 
     Returns the payload untouched when paging is meaningless: an error dict, a
     payload with no ``results``, or ``results`` that is not a list (singletons
-    and the dict-shaped monitor reads). A fan-out mapping -- what
-    ``instance="*"`` and ``vdom="*"`` produce -- is paged one level down, per
-    entry, since fan-out is precisely when the payload doubles.
+    and the dict-shaped monitor reads). A fan-out mapping -- produced by
+    ``FanOutClient._gather`` in ``instances.py`` for ``instance="*"`` and by
+    ``FortiOSClient._merge_vdom_envelopes`` in ``fortios_client.py`` for
+    ``vdom="*"`` -- is paged one level down, per entry, since fan-out is
+    precisely when the payload doubles.
 
-    Never mutates ``payload``.
+    Never mutates ``payload``. Drops CMDB's ``next_idx``/``limit_reached``:
+    both describe the device's answer to the ``count + 1`` fetch, not the
+    trimmed page returned here, so leaving them in would contradict ``_page``
+    -- a caller following a stale ``next_idx`` could silently skip rows.
+    ``size`` is kept: ``_page.total`` is derived from it and it stays accurate
+    after trimming.
     """
     if "error" in payload:
         return payload
@@ -107,13 +114,18 @@ def paginate(payload: dict[str, Any], start: int, count: int) -> dict[str, Any]:
     wanted = results[:count]
     rows = _fit_to_budget(wanted)
     total = payload.get("size")
+    returned = len(rows)
+    more = len(results) > count or len(rows) < len(wanted)
 
     paged = dict(payload)
+    paged.pop("next_idx", None)
+    paged.pop("limit_reached", None)
     paged["results"] = rows
     paged["_page"] = {
         "start": start,
-        "returned": len(rows),
-        "more": len(results) > count or len(rows) < len(wanted),
+        "returned": returned,
+        "more": more,
+        "next_start": start + returned if more else None,
         "total": total if isinstance(total, int) else None,
     }
     return paged

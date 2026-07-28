@@ -66,7 +66,13 @@ def test_page_query_asks_for_one_extra_row() -> None:
 
 def test_short_page_reports_no_more() -> None:
     result = paginate(_envelope(_rows(3)), 0, 50)
-    assert result["_page"] == {"start": 0, "returned": 3, "more": False, "total": None}
+    assert result["_page"] == {
+        "start": 0,
+        "returned": 3,
+        "more": False,
+        "next_start": None,
+        "total": None,
+    }
     assert len(result["results"]) == 3
 
 
@@ -75,7 +81,52 @@ def test_extra_row_is_dropped_and_flags_more() -> None:
     result = paginate(_envelope(_rows(51)), 0, 50)
     assert result["_page"]["more"] is True
     assert result["_page"]["returned"] == 50
+    assert result["_page"]["next_start"] == 50
     assert len(result["results"]) == 50
+
+
+# ------------------------------------------------------- stale device cursor
+
+
+def test_next_idx_and_limit_reached_are_dropped() -> None:
+    """These describe the device's answer to the count+1 fetch, not the
+    trimmed page, and would contradict `_page` if left in.
+    """
+    payload = _envelope(_rows(51), next_idx=51, limit_reached=False)
+    result = paginate(payload, 0, 50)
+    assert "next_idx" not in result
+    assert "limit_reached" not in result
+
+
+def test_next_idx_and_limit_reached_are_dropped_even_on_a_short_page() -> None:
+    """A short page is not literally trimmed, but the cursor still describes
+    the count+1 fetch rather than this response, so it must go too.
+    """
+    payload = _envelope(_rows(3), next_idx=-1, limit_reached=True)
+    result = paginate(payload, 0, 50)
+    assert "next_idx" not in result
+    assert "limit_reached" not in result
+
+
+def test_size_survives_trimming() -> None:
+    """`_page.total` is derived from `size`; it must stay in the response."""
+    payload = _envelope(_rows(51), size=77, next_idx=51)
+    result = paginate(payload, 0, 50)
+    assert result["size"] == 77
+    assert result["_page"]["total"] == 77
+
+
+# ----------------------------------------------------------------- next_start
+
+
+def test_next_start_is_start_plus_returned_when_more() -> None:
+    result = paginate(_envelope(_rows(51)), 100, 50)
+    assert result["_page"]["next_start"] == 150
+
+
+def test_next_start_is_none_when_not_more() -> None:
+    result = paginate(_envelope(_rows(3)), 0, 50)
+    assert result["_page"]["next_start"] is None
 
 
 def test_total_comes_from_the_cmdb_size_field() -> None:
@@ -93,6 +144,7 @@ def test_char_budget_trims_fat_rows_and_flags_more() -> None:
     result = paginate(_envelope(_rows(10, filler=PAGE_CHAR_BUDGET // 4)), 0, 50)
     assert result["_page"]["more"] is True
     assert result["_page"]["returned"] < 10
+    assert result["_page"]["next_start"] == result["_page"]["returned"]
     assert len(json.dumps(result["results"])) <= PAGE_CHAR_BUDGET * 1.1
 
 
@@ -101,6 +153,7 @@ def test_one_oversized_row_is_still_returned() -> None:
     result = paginate(_envelope(_rows(3, filler=PAGE_CHAR_BUDGET * 2)), 0, 50)
     assert result["_page"]["returned"] == 1
     assert result["_page"]["more"] is True
+    assert result["_page"]["next_start"] == 1
 
 
 def test_start_is_echoed_for_the_caller() -> None:

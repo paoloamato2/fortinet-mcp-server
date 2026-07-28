@@ -115,6 +115,7 @@ async def test_page_info_is_attached_with_the_cmdb_total(
         "start": 0,
         "returned": 1,
         "more": False,
+        "next_start": None,
         "total": 374,
     }
 

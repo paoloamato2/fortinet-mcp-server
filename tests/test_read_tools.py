@@ -243,8 +243,9 @@ async def test_explicit_start_and_count_are_forwarded() -> None:
 async def test_a_keyed_fetch_is_never_paged() -> None:
     """A single object is not a page; paging params would be noise."""
     client = FakeClient()
-    await read_resource(_ctx(client), "user", "local", "alice", None, None)
+    result = await read_resource(_ctx(client), "user", "local", "alice", None, None)
     assert client.calls == [("cmdb_get", "user/local/alice", None, None)]
+    assert "_page" not in result, "a keyed fetch must not carry page info"
 
 
 async def test_a_row_with_params_keeps_them_alongside_paging(
@@ -285,4 +286,10 @@ async def test_an_impossible_page_is_refused_without_calling_the_device(
 async def test_the_response_carries_page_info() -> None:
     client = FakeClient()
     result = await read_resource(_ctx(client), "user", "local", None, None, None)
-    assert result["_page"] == {"start": 0, "returned": 0, "more": False, "total": None}
+    assert result["_page"] == {
+        "start": 0,
+        "returned": 0,
+        "more": False,
+        "next_start": None,
+        "total": None,
+    }
