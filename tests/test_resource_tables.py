@@ -131,6 +131,51 @@ def test_delete_rows_are_all_keyed_cmdb() -> None:
     assert wrong == []
 
 
+def test_delete_resource_keys_are_domain_qualified() -> None:
+    """DELETE_RESOURCES backs one global fortios_delete, unlike the nine
+    per-domain read tables -- a bare key like "policy" or "local" would be
+    ambiguous across domains, so every key must carry its domain prefix.
+    """
+    assert set(DELETE_RESOURCES) == {
+        "firewall_policy",
+        "firewall_address",
+        "firewall_addrgrp",
+        "firewall_vip",
+        "router_static",
+        "ips_sensor",
+        "system_interface",
+        "system_admin",
+        "user_local",
+        "user_group",
+        "vpn_ipsec_phase1",
+        "vpn_ipsec_phase2",
+        "vpn_ssl_portal",
+        "wifi_wtp",
+        "wifi_vap",
+    }
+
+
+def test_no_summary_is_truncated() -> None:
+    """A summary cut off mid-docstring-wrap leaves unbalanced parentheses
+    and no trailing period -- exactly what a naive first-line split does to
+    a sentence that wraps onto a second line.
+    """
+    bad = [
+        f"{d}/{v}"
+        for d, rows in READ_RESOURCES.items()
+        for v, row in rows.items()
+        if row.summary.count("(") != row.summary.count(")")
+        or not row.summary.endswith(".")
+    ]
+    bad += [
+        v
+        for v, row in DELETE_RESOURCES.items()
+        if row.summary.count("(") != row.summary.count(")")
+        or not row.summary.endswith(".")
+    ]
+    assert bad == [], f"truncated or unbalanced summaries: {bad}"
+
+
 def test_migration_completeness_against_the_removed_tools() -> None:
     """Every endpoint the removed tools could reach is still reachable.
 
