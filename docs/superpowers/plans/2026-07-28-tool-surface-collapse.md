@@ -20,6 +20,7 @@
 - Every tool declares an annotation category from `tool_annotations.py`. A tool is `READ_ONLY` only when a call leaves both the FortiGate's stored config **and** its live session state as it found them.
 - Resolve the client inside the tool body: `client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(instance)`.
 - `resources.py` and `tool_params.py` must import nothing from this project, so any layer can use them with no cycle.
+- **Tests are async-native.** `pyproject.toml` sets `asyncio_mode = "auto"` under `[tool.pytest.ini_options]`, and all ten existing test files use a bare `async def test_…` with `await` — no decorator, no `asyncio.run()`. Several example blocks in this plan were drafted as sync tests calling `asyncio.run(...)`; convert those to `async def` + `await` when you transcribe them, e.g. `tools = asyncio.run(mcp.list_tools())` becomes `tools = await mcp.list_tools()`, and drop the now-unused `import asyncio`. The one-liner `uv run python -c` measurement commands keep `asyncio.run()` — they are scripts, not tests.
 - Do **not** stage `CLAUDE.md`, `.claude/`, or `.mcp.json` — they are excluded via `.git/info/exclude`. Check `git diff --cached --name-only` before every commit.
 - The surface-budget ceiling in `tests/test_tool_surface_budget.py` is a **ratchet**: it only ever decreases. Every task that shrinks the surface tightens it in the same commit.
 
@@ -105,43 +106,14 @@ async def test_ceiling_is_not_slack() -> None:
     )
 ```
 
-- [ ] **Step 2: Run the test to see how it fails**
+- [ ] **Step 2: Drop the `@pytest.mark.anyio` decorators**
 
-```bash
-uv run pytest tests/test_tool_surface_budget.py -v
-```
+Already resolved: `pyproject.toml` sets `asyncio_mode = "auto"`, so a bare
+`async def test_…` is collected and run with no decorator. Remove both
+`@pytest.mark.anyio` lines and the `import pytest` (nothing else in this file
+uses it). This matches all ten existing test files.
 
-Expected: both tests ERROR with a fixture/marker problem — `anyio` is not configured. This tells you whether the repo already has an async-test convention.
-
-- [ ] **Step 3: Match the repo's existing async-test convention**
-
-```bash
-grep -rn "anyio\|asyncio_mode\|pytest.mark.asyncio" tests/ pyproject.toml
-```
-
-If the repo already configures one (e.g. `asyncio_mode = "auto"` under `[tool.pytest.ini_options]`), delete the `@pytest.mark.anyio` decorators and the `import pytest` if unused, and let the existing config drive it. If nothing is configured, the tests in this repo are all synchronous — in that case replace the two async tests with synchronous ones that drive the coroutine directly:
-
-```python
-import asyncio
-
-
-def test_surface_stays_under_the_ceiling() -> None:
-    total = asyncio.run(serialised_surface_chars())
-    assert total <= SURFACE_CEILING_CHARS, (
-        f"tool surface grew to {total} chars, ceiling is "
-        f"{SURFACE_CEILING_CHARS}. Every client pays this on every request."
-    )
-
-
-def test_ceiling_is_not_slack() -> None:
-    total = asyncio.run(serialised_surface_chars())
-    assert total >= SURFACE_CEILING_CHARS - 20_000, (
-        f"surface is {total} chars but the ceiling is still "
-        f"{SURFACE_CEILING_CHARS} -- tighten it in this commit."
-    )
-```
-
-- [ ] **Step 4: Run the tests and confirm they pass**
+- [ ] **Step 3: Run the tests and confirm they pass**
 
 ```bash
 uv run pytest tests/test_tool_surface_budget.py -v
@@ -149,7 +121,7 @@ uv run pytest tests/test_tool_surface_budget.py -v
 
 Expected: PASS. Today's surface is 227,145 chars, just under the 227,200 ceiling.
 
-- [ ] **Step 5: Print the number so you can see the ratchet move later**
+- [ ] **Step 4: Print the number so you can see the ratchet move later**
 
 ```bash
 uv run python -c "
@@ -161,7 +133,52 @@ print('chars:', asyncio.run(serialised_surface_chars()))
 
 Expected: `chars: 227145`
 
-- [ ] **Step 6: Lint, type-check, full suite**
+- [ ] **Step 5: Route the frozen tool count through one constant**
+
+`tests/test_tool_annotations.py` asserts the absolute tool count in two
+places — `assert len(tools) == 241` (in
+`test_the_frozen_list_covers_the_whole_write_surface`) and
+`assert len(by_name) == 241` (in `test_the_ast_walk_covers_every_registered_tool`).
+Tasks 5, 6 and 7 each change that count, and the Global Constraints require
+every task to end with a green suite, so the number needs to live in one
+place before it starts moving.
+
+Add near the top of `tests/test_tool_annotations.py`, beside the other
+module-level constants:
+
+```python
+#: Registered tool count. Two contracts below assert against it, so the
+#: collapse moves this one line per task rather than hunting literals:
+#: 241 -> 232 (user_read) -> 105 (the other eight) -> 91 (fortios_delete).
+EXPECTED_TOOL_COUNT = 241
+```
+
+Then replace both literals with the constant:
+
+```python
+    assert len(tools) == EXPECTED_TOOL_COUNT, (
+        f"registered {len(tools)} tools, expected {EXPECTED_TOOL_COUNT}"
+    )
+```
+
+```python
+    assert len(by_name) == EXPECTED_TOOL_COUNT, (
+        f"AST walk found {len(by_name)} tools, expected {EXPECTED_TOOL_COUNT}"
+    )
+```
+
+Leave `len(EXPECTED_MUTATING) == 58` alone — Task 7 is the only task that
+changes the write surface, and it updates that assertion itself.
+
+- [ ] **Step 6: Confirm the annotation suite still passes**
+
+```bash
+uv run pytest tests/test_tool_annotations.py -v
+```
+
+Expected: PASS — this is a pure indirection, the value is still 241.
+
+- [ ] **Step 7: Lint, type-check, full suite**
 
 ```bash
 uv run ruff format . && uv run ruff check . && uv run pyright && uv run pytest
@@ -169,12 +186,16 @@ uv run ruff format . && uv run ruff check . && uv run pyright && uv run pytest
 
 Expected: all pass.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 8: Commit**
 
 ```bash
-git add tests/test_tool_surface_budget.py
-git diff --cached --name-only   # must show ONLY that file
-git commit -m "test(surface): ratchet the advertised tool surface at 227,200 chars"
+git add tests/test_tool_surface_budget.py tests/test_tool_annotations.py
+git diff --cached --name-only   # must show ONLY those two files
+git commit -m "test(surface): ratchet the advertised tool surface at 227,200 chars
+
+Also routes the two hard-coded 241 assertions in test_tool_annotations.py
+through EXPECTED_TOOL_COUNT, so the tasks that change the count move one
+line and keep the suite green."
 ```
 
 ---
@@ -1073,7 +1094,11 @@ uv run ruff format . && uv run ruff check . && uv run pyright && uv run pytest
 
 Expected: all pass. The surface ratchet is unchanged — this task adds no tools.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 6: Commit the table and the generator that produced it**
+
+This commit is the provenance record: `git show` on it reproduces the whole
+derivation. The generator must be committed here, before Step 7 removes it —
+deleting it first would mean it never entered history at all.
 
 ```bash
 git add resources.py scripts/generate_resources.py tests/test_resource_tables.py
@@ -1084,6 +1109,38 @@ git commit -m "feat(resources): derive the FortiOS resource table from the alias
 the 160 tool bodies they replace so the summaries are those docstrings
 verbatim. Drops the system_fortiguard_status / monitor_license_status
 duplicate, which the uniqueness contract surfaced."
+```
+
+- [ ] **Step 7: Retire the generator in a second commit**
+
+It only works while the alias tools exist. After Task 6 removes them it would
+emit an empty table, so anyone running it would overwrite `resources.py` with
+nothing — dead code with a footgun attached. The previous commit holds the
+derivation.
+
+Replace the `GENERATED by scripts/generate_resources.py …` paragraph in
+`resources.py`'s module docstring with:
+
+```text
+Derived by AST from the 160 alias tools this table replaced -- the summaries
+are those tools' docstrings, carried over verbatim. The generator was a
+one-shot and was retired immediately afterwards: it cannot re-derive rows for
+tools that no longer exist. See the commit that added this file for the
+derivation. Add a resource by editing this file directly.
+```
+
+Then:
+
+```bash
+git rm scripts/generate_resources.py
+uv run ruff format . && uv run pytest
+git add resources.py
+git diff --cached --name-only
+git commit -m "chore(resources): retire the one-shot table generator
+
+It can only read tools that still exist; after the collapse it would emit an
+empty table and overwrite resources.py. The preceding commit is the
+derivation record."
 ```
 
 ---
@@ -1451,13 +1508,19 @@ uv run pytest tests/test_read_tools.py -v
 
 Expected: all PASS.
 
-- [ ] **Step 8: Lint, type-check, full suite**
+- [ ] **Step 7: Lint, type-check, full suite**
 
 ```bash
 uv run ruff format . && uv run ruff check . && uv run pyright && uv run pytest
 ```
 
-Expected: all pass. `tests/test_tool_annotations.py` still passes — `user_read` reaches only `cmdb_get`/`monitor_get`, so the AST write-guard is satisfied and `EXPECTED_MUTATING` is unaffected.
+Expected: `tests/test_tool_annotations.py` FAILS on `EXPECTED_TOOL_COUNT` — ten tools left and one arrived, so the registry now holds 232. Set it in that file:
+
+```python
+EXPECTED_TOOL_COUNT = 232
+```
+
+Re-run. Everything then passes: `user_read` reaches only `cmdb_get`/`monitor_get`, so the AST write-guard is satisfied and `EXPECTED_MUTATING` is untouched — no read tool is a writer.
 
 - [ ] **Step 9: Tighten the ratchet**
 
@@ -1474,7 +1537,7 @@ Ten tools removed (~7,000 chars) and one added (~1,300), so expect roughly `164,
 - [ ] **Step 10: Commit**
 
 ```bash
-git add tools/_read.py tools/user.py tests/test_read_tools.py tests/test_tool_surface_budget.py
+git add tools/_read.py tools/user.py tests/test_read_tools.py tests/test_tool_surface_budget.py tests/test_tool_annotations.py
 git diff --cached --name-only
 git commit -m "feat(user): collapse ten user tools into user_read
 
@@ -1488,6 +1551,16 @@ docstrings carried into the description as the resource table."
 ### Task 6: The remaining eight domains
 
 The pattern is proven, so each domain is one small function plus deletions. Each gets its own test-and-commit cycle — a reviewer can reject `security` while approving `log`.
+
+**Why these nine functions are near-identical rather than one factory.** The
+obvious refactor — a `register_read_tool(mcp, domain)` helper looping over the
+domains — requires building the `resource` annotation as `Literal[tuple(names)]`
+at runtime. Pyright rejects a dynamically-subscripted `Literal`, and pyright is
+a CI gate (see Global Constraints), so the nine explicit `Literal` aliases in
+`resources.py` are what make the enums type-check at all. The *logic* is
+already factored out into `tools/_read.py` and is not repeated; what repeats is
+nine parameter lists and nine one-line delegations, which is the price of a
+statically-checkable enum. Do not collapse these into a loop or a factory.
 
 **Files, per domain:**
 - Modify: `tools/firewall.py`, `tools/log.py`, `tools/monitor.py`, `tools/router.py`, `tools/security.py`, `tools/system.py`, `tools/vpn.py`, `tools/wireless.py`
@@ -1621,7 +1694,9 @@ Expected: `tools: 105` — 241 less the 145 read-side removals (126 zero-param +
 uv run ruff format . && uv run ruff check . && uv run pyright && uv run pytest
 ```
 
-Expected: all pass. If `tests/test_tool_annotations.py` fails on a count assertion in a docstring, leave it — Task 8 updates the prose. If it fails on `EXPECTED_MUTATING`, something in the deletion list was wrong: no removed read tool is a writer.
+Expected: `tests/test_tool_annotations.py` FAILS on `EXPECTED_TOOL_COUNT` — set it to `105` in that file and re-run. Everything then passes.
+
+If it instead fails on `EXPECTED_MUTATING`, something in the deletion list was wrong: every tool removed in this task is a reader, so the write surface must be unchanged. Do not edit `EXPECTED_MUTATING` to make it pass — find the mis-deleted tool.
 
 - [ ] **Step 6: Tighten the ratchet**
 
@@ -1643,9 +1718,11 @@ Commit per domain as you go, then the ratchet last:
 git add tools/<domain>.py tests/test_read_tools.py
 git commit -m "feat(<domain>): collapse N pure-alias tools into <domain>_read"
 # ... after all eight ...
-git add tests/test_tool_surface_budget.py
+git add tests/test_tool_surface_budget.py tests/test_tool_annotations.py
 git diff --cached --name-only
-git commit -m "test(surface): ratchet after the nine read tools land"
+git commit -m "test(surface): ratchet after the nine read tools land
+
+EXPECTED_TOOL_COUNT 241 -> 105."
 ```
 
 ---
@@ -1876,13 +1953,23 @@ Delete these functions from their modules: `firewall_policy_delete`, `firewall_a
 
 - [ ] **Step 5: Update the frozen writer set**
 
-In `tests/test_tool_annotations.py`, remove those 15 names from `EXPECTED_MUTATING` and add `fortios_delete`. Run:
+This task changes both frozen numbers in `tests/test_tool_annotations.py`:
+
+1. Remove those 15 names from `EXPECTED_MUTATING` and add `fortios_delete`. The set goes from 58 entries to 44, so update the assertion that pins its size:
+
+```python
+    assert len(EXPECTED_MUTATING) == 44, (
+        f"frozen writer set has {len(EXPECTED_MUTATING)} entries, expected 44"
+    )
+```
+
+2. Set `EXPECTED_TOOL_COUNT = 91` — the final count.
 
 ```bash
 uv run pytest tests/test_tool_annotations.py -v
 ```
 
-Expected: PASS. If the AST write-guard fails, `fortios_delete` reaches `cmdb_delete` and must be `DESTRUCTIVE`, not `READ_ONLY` — check the decorator.
+Expected: PASS. If the AST write-guard fails, `fortios_delete` reaches `cmdb_delete` and must be `DESTRUCTIVE`, not `READ_ONLY` — check the decorator. If `test_expected_mutating_entries_reach_a_write_method` fails, a name left in the set no longer exists — cross-check the 15 deletions against the set.
 
 - [ ] **Step 6: Run the new tests and the full suite**
 
