@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 from typing import Any
 
@@ -119,10 +120,18 @@ class FortiOSClient:
         try:
             body: Any = resp.json()
         except Exception as exc:
-            raise FortiOSError(
-                f"Non-JSON response (HTTP {resp.status_code}): {resp.text[:300]}",
-                resp.status_code,
-            ) from exc
+            # FortiOS can emit raw non-UTF-8 bytes inside JSON strings --
+            # FortiAPs copy unsanitised scan memory into wifi/client's
+            # triangulation_regions[].wtp_id -- while the surrounding JSON
+            # stays well formed. Substituting the bad bytes recovers the
+            # whole body; only when that also fails is it truly not JSON.
+            try:
+                body = json.loads(resp.content.decode("utf-8", errors="replace"))
+            except Exception:
+                raise FortiOSError(
+                    f"Non-JSON response (HTTP {resp.status_code}): {resp.text[:300]}",
+                    resp.status_code,
+                ) from exc
 
         # A ``vdom="*"`` query is the one case where FortiOS answers with a
         # JSON array -- one envelope per VDOM -- instead of a single object.
