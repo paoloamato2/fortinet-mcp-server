@@ -10,25 +10,64 @@ from typing import Annotated, Any
 from mcp.server.fastmcp import FastMCP, Context
 from pydantic import Field
 
-from fortios_client import FortiOSClient, FortiOSError
+from fortios_client import FortiOSError
+from instances import FortiOSAPI
+from paging import PageError, normalise, page_query, paginate
+from resources import FirewallResource
+from tool_annotations import CREATES, DESTRUCTIVE, READ_ONLY
+from tool_params import CountParam, InstanceParam, StartParam, VdomParam
+from tools._read import read_resource, resource_table_doc
 
 
 def register(mcp: FastMCP) -> None:
     """Register all firewall tools."""
 
+    async def firewall_read(
+        ctx: Context,
+        resource: Annotated[
+            FirewallResource, Field(description="Which firewall resource to read.")
+        ],
+        name: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Object key to fetch. Omit to list every object. "
+                    "Rejected for singletons and monitor endpoints."
+                ),
+            ),
+        ] = None,
+        start: StartParam = None,
+        count: CountParam = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
+    ) -> dict[str, Any]:
+        """Placeholder replaced below with the generated resource table."""
+        return await read_resource(
+            ctx, "firewall", resource, name, instance, vdom, start, count
+        )
+
+    firewall_read.__doc__ = (
+        "Read firewall objects, policies and live firewall state.\n\n"
+        "Omit `name` to list a resource, or pass it to fetch one object by "
+        "key.\n\n"
+        "IPv4 policies and addresses are not in this table -- their "
+        "`_list`/`_get` tools carry real filter logic and were kept "
+        "separately. Use `firewall_policy_list`/`firewall_policy_get` for "
+        "IPv4 policies and `firewall_address_list`/`firewall_address_get` "
+        "for IPv4 addresses.\n\n" + resource_table_doc("firewall")
+    )
+    mcp.tool(annotations=READ_ONLY)(firewall_read)
+
     # ==================================================================
     # FIREWALL POLICIES  (IPv4)
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def firewall_policy_list(
         ctx: Context,
-        start: Annotated[
-            int, Field(default=0, description="Offset for pagination.")
-        ] = 0,
-        count: Annotated[
-            int, Field(default=200, description="Max number of policies to return.")
-        ] = 200,
+        start: StartParam = None,
+        count: CountParam = None,
         filter_srcintf: Annotated[
             str | None,
             Field(default=None, description="Filter by source interface name."),
@@ -41,21 +80,18 @@ def register(mcp: FastMCP) -> None:
             str | None,
             Field(default=None, description="Filter by action: accept or deny."),
         ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """List IPv4 firewall policies with optional filters.
 
         Returns policy ID, name, source/destination interfaces and zones,
         source/destination addresses, services, action, and status.
         """
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        params: dict[str, Any] = {"start": start, "count": count}
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
+        params: dict[str, Any] = {}
         filters = []
         if filter_srcintf:
             filters.append(f"srcintf=={filter_srcintf}")
@@ -66,30 +102,33 @@ def register(mcp: FastMCP) -> None:
         if filters:
             params["filter"] = "&".join(filters)
         try:
-            return await client.cmdb_get("firewall/policy", params, vdom=vdom)
+            page_start, page_count = normalise(start, count)
+        except PageError as exc:
+            return {"error": str(exc)}
+        params.update(page_query(page_start, page_count))
+        try:
+            payload = await client.cmdb_get("firewall/policy", params, vdom=vdom)
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
+        return paginate(payload, page_start, page_count)
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def firewall_policy_get(
         ctx: Context,
         policy_id: Annotated[int, Field(description="Firewall policy ID number.")],
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Get a specific IPv4 firewall policy by its ID."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             return await client.cmdb_get(f"firewall/policy/{policy_id}", vdom=vdom)
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=CREATES)
     async def firewall_policy_create(
         ctx: Context,
         name: Annotated[str, Field(description="Policy name.")],
@@ -127,16 +166,13 @@ def register(mcp: FastMCP) -> None:
         schedule: Annotated[
             str, Field(default="always", description="Schedule name.")
         ] = "always",
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Create a new IPv4 firewall policy."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         body: dict[str, Any] = {
             "name": name,
             "srcintf": [{"name": srcintf}],
@@ -157,7 +193,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=DESTRUCTIVE)
     async def firewall_policy_update(
         ctx: Context,
         policy_id: Annotated[int, Field(description="Firewall policy ID to update.")],
@@ -180,16 +216,13 @@ def register(mcp: FastMCP) -> None:
         comments: Annotated[
             str | None, Field(default=None, description="New comment.")
         ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Update fields of an existing IPv4 firewall policy."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         body: dict[str, Any] = {}
         if name is not None:
             body["name"] = name
@@ -212,26 +245,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
-    async def firewall_policy_delete(
-        ctx: Context,
-        policy_id: Annotated[int, Field(description="Firewall policy ID to delete.")],
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """Delete an IPv4 firewall policy."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.cmdb_delete(f"firewall/policy/{policy_id}", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool()
+    @mcp.tool(annotations=DESTRUCTIVE)
     async def firewall_policy_move(
         ctx: Context,
         policy_id: Annotated[int, Field(description="Policy ID to move.")],
@@ -245,16 +259,13 @@ def register(mcp: FastMCP) -> None:
             int,
             Field(description="ID of the neighbor policy for relative positioning."),
         ],
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Move a firewall policy (change its order in the policy table)."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             return await client.cmdb_put(
                 f"firewall/policy/{policy_id}",
@@ -266,32 +277,10 @@ def register(mcp: FastMCP) -> None:
             return {"error": str(exc), "status_code": exc.status_code}
 
     # ==================================================================
-    # FIREWALL POLICIES  (IPv6)
-    # ==================================================================
-
-    @mcp.tool()
-    async def firewall_policy6_list(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """List all IPv6 firewall policies."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.cmdb_get("firewall/policy6", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    # ==================================================================
     # ADDRESS OBJECTS
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def firewall_address_list(
         ctx: Context,
         filter_type: Annotated[
@@ -301,44 +290,46 @@ def register(mcp: FastMCP) -> None:
                 description="Filter by address type: ipmask, iprange, fqdn, geography, wildcard, etc.",
             ),
         ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        start: StartParam = None,
+        count: CountParam = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """List all IPv4 firewall address objects."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         params: dict[str, Any] = {}
         if filter_type:
             params["filter"] = f"type=={filter_type}"
         try:
-            return await client.cmdb_get("firewall/address", params or None, vdom=vdom)
+            page_start, page_count = normalise(start, count)
+        except PageError as exc:
+            return {"error": str(exc)}
+        params.update(page_query(page_start, page_count))
+        try:
+            payload = await client.cmdb_get("firewall/address", params, vdom=vdom)
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
+        return paginate(payload, page_start, page_count)
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def firewall_address_get(
         ctx: Context,
         name: Annotated[str, Field(description="Address object name.")],
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Get a specific IPv4 firewall address object."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             return await client.cmdb_get(f"firewall/address/{name}", vdom=vdom)
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=CREATES)
     async def firewall_address_create(
         ctx: Context,
         name: Annotated[str, Field(description="Address object name.")],
@@ -377,16 +368,13 @@ def register(mcp: FastMCP) -> None:
         comment: Annotated[
             str | None, Field(default=None, description="Optional comment.")
         ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Create a new IPv4 firewall address object."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         body: dict[str, Any] = {"name": name, "type": addr_type}
         if subnet:
             body["subnet"] = subnet
@@ -405,7 +393,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=DESTRUCTIVE)
     async def firewall_address_update(
         ctx: Context,
         name: Annotated[str, Field(description="Address object name to update.")],
@@ -418,16 +406,13 @@ def register(mcp: FastMCP) -> None:
         comment: Annotated[
             str | None, Field(default=None, description="New comment.")
         ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Update an IPv4 firewall address object."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         body: dict[str, Any] = {}
         if subnet is not None:
             body["subnet"] = subnet
@@ -442,67 +427,11 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
-    async def firewall_address_delete(
-        ctx: Context,
-        name: Annotated[str, Field(description="Address object name to delete.")],
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """Delete an IPv4 firewall address object."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.cmdb_delete(f"firewall/address/{name}", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
     # ==================================================================
     # ADDRESS GROUPS
     # ==================================================================
 
-    @mcp.tool()
-    async def firewall_addrgrp_list(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """List all IPv4 firewall address groups."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.cmdb_get("firewall/addrgrp", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool()
-    async def firewall_addrgrp_get(
-        ctx: Context,
-        name: Annotated[str, Field(description="Address group name.")],
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """Get a specific IPv4 address group and its members."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.cmdb_get(f"firewall/addrgrp/{name}", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool()
+    @mcp.tool(annotations=CREATES)
     async def firewall_addrgrp_create(
         ctx: Context,
         name: Annotated[str, Field(description="Address group name.")],
@@ -515,16 +444,13 @@ def register(mcp: FastMCP) -> None:
         comment: Annotated[
             str | None, Field(default=None, description="Optional comment.")
         ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Create a new IPv4 address group."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         body: dict[str, Any] = {
             "name": name,
             "member": [{"name": m} for m in members],
@@ -536,67 +462,11 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
-    async def firewall_addrgrp_delete(
-        ctx: Context,
-        name: Annotated[str, Field(description="Address group name to delete.")],
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """Delete an IPv4 address group."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.cmdb_delete(f"firewall/addrgrp/{name}", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
     # ==================================================================
     # SERVICE OBJECTS
     # ==================================================================
 
-    @mcp.tool()
-    async def firewall_service_list(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """List all custom firewall service objects."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.cmdb_get("firewall.service/custom", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool()
-    async def firewall_service_get(
-        ctx: Context,
-        name: Annotated[str, Field(description="Service object name.")],
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """Get a specific custom firewall service object."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.cmdb_get(f"firewall.service/custom/{name}", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool()
+    @mcp.tool(annotations=CREATES)
     async def firewall_service_create(
         ctx: Context,
         name: Annotated[str, Field(description="Service object name.")],
@@ -616,16 +486,13 @@ def register(mcp: FastMCP) -> None:
         comment: Annotated[
             str | None, Field(default=None, description="Comment.")
         ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Create a new custom service object."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         body: dict[str, Any] = {"name": name, "protocol": protocol}
         if tcp_portrange:
             body["tcp-portrange"] = tcp_portrange
@@ -638,66 +505,11 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
-    async def firewall_service_grp_list(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """List all firewall service groups."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.cmdb_get("firewall.service/group", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
     # ==================================================================
     # VIRTUAL IPs (VIP)
     # ==================================================================
 
-    @mcp.tool()
-    async def firewall_vip_list(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """List all Virtual IP (DNAT) objects."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.cmdb_get("firewall/vip", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool()
-    async def firewall_vip_get(
-        ctx: Context,
-        name: Annotated[str, Field(description="VIP object name.")],
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """Get a specific Virtual IP (DNAT) object."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.cmdb_get(f"firewall/vip/{name}", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool()
+    @mcp.tool(annotations=CREATES)
     async def firewall_vip_create(
         ctx: Context,
         name: Annotated[str, Field(description="VIP name.")],
@@ -737,16 +549,13 @@ def register(mcp: FastMCP) -> None:
         comment: Annotated[
             str | None, Field(default=None, description="Comment.")
         ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Create a new Virtual IP (DNAT/port-forward) object."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         body: dict[str, Any] = {
             "name": name,
             "extip": external_ip,
@@ -766,70 +575,11 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
-    async def firewall_vip_delete(
-        ctx: Context,
-        name: Annotated[str, Field(description="VIP name to delete.")],
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """Delete a Virtual IP object."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.cmdb_delete(f"firewall/vip/{name}", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    # ==================================================================
-    # VIP GROUPS
-    # ==================================================================
-
-    @mcp.tool()
-    async def firewall_vipgrp_list(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """List all VIP groups."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.cmdb_get("firewall/vipgrp", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
     # ==================================================================
     # IP POOLS (source NAT)
     # ==================================================================
 
-    @mcp.tool()
-    async def firewall_ippool_list(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """List all IP pool (source NAT) objects."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.cmdb_get("firewall/ippool", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool()
+    @mcp.tool(annotations=CREATES)
     async def firewall_ippool_create(
         ctx: Context,
         name: Annotated[str, Field(description="IP pool name.")],
@@ -845,16 +595,13 @@ def register(mcp: FastMCP) -> None:
         comment: Annotated[
             str | None, Field(default=None, description="Comment.")
         ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Create a new IP pool (source NAT pool) object."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         body: dict[str, Any] = {
             "name": name,
             "startip": start_ip,
@@ -869,121 +616,14 @@ def register(mcp: FastMCP) -> None:
             return {"error": str(exc), "status_code": exc.status_code}
 
     # ==================================================================
-    # SCHEDULES
-    # ==================================================================
-
-    @mcp.tool()
-    async def firewall_schedule_one_time_list(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """List all one-time schedules."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.cmdb_get("firewall.schedule/onetime", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool()
-    async def firewall_schedule_recurring_list(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """List all recurring schedules."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.cmdb_get("firewall.schedule/recurring", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    # ==================================================================
-    # CENTRAL SNAT
-    # ==================================================================
-
-    @mcp.tool()
-    async def firewall_central_snat_list(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """List all central SNAT (outgoing NAT) rules."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.cmdb_get("firewall/central-snat-map", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    # ==================================================================
-    # SSL/SSH INSPECTION PROFILES
-    # ==================================================================
-
-    @mcp.tool()
-    async def firewall_ssl_ssh_profile_list(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """List all SSL/SSH deep inspection profiles."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.cmdb_get("firewall/ssl-ssh-profile", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    # ==================================================================
-    # SHAPING POLICIES
-    # ==================================================================
-
-    @mcp.tool()
-    async def firewall_shaping_policy_list(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """List all traffic shaping policies."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.cmdb_get("firewall/shaping-policy", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    # ==================================================================
     # MONITOR: FIREWALL SESSIONS
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_firewall_session_list(
         ctx: Context,
-        count: Annotated[
-            int, Field(default=100, description="Max number of sessions to return.")
-        ] = 100,
+        start: StartParam = None,
+        count: CountParam = None,
         srcaddr: Annotated[
             str | None, Field(default=None, description="Filter by source IP address.")
         ] = None,
@@ -1004,17 +644,14 @@ def register(mcp: FastMCP) -> None:
                 description="Filter by IP protocol number (e.g. 6 for TCP).",
             ),
         ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """List active firewall sessions with optional filters."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        params: dict[str, Any] = {"count": count}
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
+        params: dict[str, Any] = {}
         if srcaddr:
             params["srcaddr"] = srcaddr
         if dstaddr:
@@ -1026,11 +663,17 @@ def register(mcp: FastMCP) -> None:
         if protocol is not None:
             params["proto"] = protocol
         try:
-            return await client.monitor_get("firewall/session", params, vdom=vdom)
+            page_start, page_count = normalise(start, count)
+        except PageError as exc:
+            return {"error": str(exc)}
+        params.update(page_query(page_start, page_count))
+        try:
+            payload = await client.monitor_get("firewall/session", params, vdom=vdom)
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
+        return paginate(payload, page_start, page_count)
 
-    @mcp.tool()
+    @mcp.tool(annotations=DESTRUCTIVE)
     async def monitor_firewall_session_close(
         ctx: Context,
         proto: Annotated[int, Field(description="IP protocol number (6=TCP, 17=UDP).")],
@@ -1038,16 +681,13 @@ def register(mcp: FastMCP) -> None:
         srcport: Annotated[int, Field(description="Source port.")],
         dstaddr: Annotated[str, Field(description="Destination IP address.")],
         dstport: Annotated[int, Field(description="Destination port.")],
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Close a specific active firewall session."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         body = {
             "proto": proto,
             "srcaddr": srcaddr,
@@ -1057,59 +697,5 @@ def register(mcp: FastMCP) -> None:
         }
         try:
             return await client.monitor_post("firewall/session/close", body, vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool()
-    async def monitor_firewall_policy_stats(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """Get hit counts, bytes, and packet statistics per firewall policy."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.monitor_get("firewall/policy-lookup", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool()
-    async def monitor_firewall_address_dynamic(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """Get resolved IPs for all dynamic/FQDN firewall address objects."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.monitor_get("firewall/address-dynamic", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool()
-    async def monitor_firewall_ip_list(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """List active banned/exempt IPs in the firewall."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.monitor_get("firewall/iplist", vdom=vdom)
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}

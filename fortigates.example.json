@@ -1,0 +1,19 @@
+[
+  {
+    "name": "hq-fw",
+    "description": "HQ perimeter firewall, Vienna. Production internet edge and IPsec hub.",
+    "host": "https://10.0.0.1",
+    "api_token": "your-api-token-here",
+    "vdom": "root",
+    "read_only": true
+  },
+  {
+    "name": "dc-edge",
+    "description": "Datacenter edge, one VDOM per tenant. Change window Sundays 02:00.",
+    "host": "https://10.9.0.1",
+    "api_token_env": "DC_EDGE_TOKEN",
+    "vdom": "tenant1",
+    "verify_ssl": true,
+    "timeout": 45
+  }
+]

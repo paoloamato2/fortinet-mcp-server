@@ -11,7 +11,12 @@ from typing import Annotated, Any
 from mcp.server.fastmcp import FastMCP, Context
 from pydantic import Field
 
-from fortios_client import FortiOSClient, FortiOSError
+from fortios_client import FortiOSError
+from instances import FortiOSAPI
+from resources import LogResource
+from tool_annotations import DESTRUCTIVE, READ_ONLY
+from tool_params import CountParam, InstanceParam, StartParam, VdomParam
+from tools._read import read_resource, resource_table_doc
 
 
 # Log source backends
@@ -46,11 +51,43 @@ _LOG_TYPES = (
 def register(mcp: FastMCP) -> None:
     """Register all log tools."""
 
+    async def log_read(
+        ctx: Context,
+        resource: Annotated[
+            LogResource, Field(description="Which log resource to read.")
+        ],
+        name: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Object key to fetch. Omit to list every object. "
+                    "Rejected for singletons and monitor endpoints."
+                ),
+            ),
+        ] = None,
+        start: StartParam = None,
+        count: CountParam = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
+    ) -> dict[str, Any]:
+        """Placeholder replaced below with the generated resource table."""
+        return await read_resource(
+            ctx, "log", resource, name, instance, vdom, start, count
+        )
+
+    log_read.__doc__ = (
+        "Read log subsystem configuration (disk, memory, FortiAnalyzer).\n\n"
+        "Omit `name` to list a resource, or pass it to fetch one object by "
+        "key.\n\n" + resource_table_doc("log")
+    )
+    mcp.tool(annotations=READ_ONLY)(log_read)
+
     # ==================================================================
     # GENERIC LOG QUERY (any backend + type)
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def log_query(
         ctx: Context,
         source: Annotated[
@@ -99,20 +136,17 @@ def register(mcp: FastMCP) -> None:
             dict[str, Any] | None,
             Field(default=None, description="Additional query parameters as a dict."),
         ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Query logs from FortiOS with flexible filtering.
 
         Returns log entries from the specified backend and type.
         Results include timestamps, sources, destinations, actions, and UTM verdicts.
         """
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         if source not in _BACKENDS:
             return {
                 "error": f"Invalid source '{source}'. Must be one of: {', '.join(_BACKENDS)}"
@@ -133,7 +167,7 @@ def register(mcp: FastMCP) -> None:
     # TRAFFIC LOGS
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def log_traffic_forward(
         ctx: Context,
         rows: Annotated[
@@ -161,16 +195,13 @@ def register(mcp: FastMCP) -> None:
         source: Annotated[
             str, Field(default="disk", description="Log source: disk or memory.")
         ] = "disk",
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Query forward traffic logs with optional per-field filters."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         filters = []
         if srcip:
             filters.append(f"srcip=={srcip}")
@@ -190,7 +221,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def log_traffic_local(
         ctx: Context,
         rows: Annotated[
@@ -200,16 +231,13 @@ def register(mcp: FastMCP) -> None:
         source: Annotated[
             str, Field(default="disk", description="Log source: disk or memory.")
         ] = "disk",
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Query local traffic logs (traffic to/from the FortiGate itself)."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             return await client.log_get(
                 f"{source}/traffic/local", {"rows": rows, "start": start}, vdom=vdom
@@ -221,7 +249,7 @@ def register(mcp: FastMCP) -> None:
     # EVENT LOGS
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def log_event_system(
         ctx: Context,
         rows: Annotated[
@@ -231,16 +259,13 @@ def register(mcp: FastMCP) -> None:
         source: Annotated[
             str, Field(default="disk", description="Log source: disk or memory.")
         ] = "disk",
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Query system event logs (admin logins, config changes, system alerts)."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             return await client.log_get(
                 f"{source}/event/system", {"rows": rows, "start": start}, vdom=vdom
@@ -248,7 +273,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def log_event_vpn(
         ctx: Context,
         rows: Annotated[
@@ -258,16 +283,13 @@ def register(mcp: FastMCP) -> None:
         source: Annotated[
             str, Field(default="disk", description="Log source: disk or memory.")
         ] = "disk",
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Query VPN event logs (IPsec SA negotiations, SSL VPN logins/logouts)."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             return await client.log_get(
                 f"{source}/event/vpn", {"rows": rows, "start": start}, vdom=vdom
@@ -275,7 +297,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def log_event_user(
         ctx: Context,
         rows: Annotated[
@@ -288,16 +310,13 @@ def register(mcp: FastMCP) -> None:
         source: Annotated[
             str, Field(default="disk", description="Log source: disk or memory.")
         ] = "disk",
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Query user authentication event logs."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         params: dict[str, Any] = {"rows": rows, "start": start}
         if username:
             params["filter"] = f"user=={username}"
@@ -310,7 +329,7 @@ def register(mcp: FastMCP) -> None:
     # SECURITY (UTM / THREAT) LOGS
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def log_virus(
         ctx: Context,
         rows: Annotated[
@@ -320,16 +339,13 @@ def register(mcp: FastMCP) -> None:
         source: Annotated[
             str, Field(default="disk", description="Log source: disk or memory.")
         ] = "disk",
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Query antivirus threat logs."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             return await client.log_get(
                 f"{source}/virus/archive", {"rows": rows, "start": start}, vdom=vdom
@@ -342,7 +358,7 @@ def register(mcp: FastMCP) -> None:
             except FortiOSError as exc2:
                 return {"error": str(exc2), "status_code": exc2.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def log_webfilter(
         ctx: Context,
         rows: Annotated[
@@ -359,16 +375,13 @@ def register(mcp: FastMCP) -> None:
         source: Annotated[
             str, Field(default="disk", description="Log source: disk or memory.")
         ] = "disk",
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Query web filter (URL category/block) logs."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         params: dict[str, Any] = {"rows": rows, "start": start}
         if action:
             params["filter"] = f"action=={action}"
@@ -377,7 +390,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def log_ips_attack(
         ctx: Context,
         rows: Annotated[
@@ -390,16 +403,13 @@ def register(mcp: FastMCP) -> None:
         source: Annotated[
             str, Field(default="disk", description="Log source: disk or memory.")
         ] = "disk",
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Query IPS intrusion detection/prevention attack logs."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         params: dict[str, Any] = {"rows": rows, "start": start}
         if srcip:
             params["filter"] = f"srcip=={srcip}"
@@ -408,7 +418,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def log_app_ctrl(
         ctx: Context,
         rows: Annotated[
@@ -422,16 +432,13 @@ def register(mcp: FastMCP) -> None:
         source: Annotated[
             str, Field(default="disk", description="Log source: disk or memory.")
         ] = "disk",
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Query Application Control logs."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         params: dict[str, Any] = {"rows": rows, "start": start}
         if action:
             params["filter"] = f"action=={action}"
@@ -440,7 +447,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def log_dns(
         ctx: Context,
         rows: Annotated[
@@ -450,16 +457,13 @@ def register(mcp: FastMCP) -> None:
         source: Annotated[
             str, Field(default="disk", description="Log source: disk or memory.")
         ] = "disk",
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Query DNS filter logs."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             return await client.log_get(
                 f"{source}/dns", {"rows": rows, "start": start}, vdom=vdom
@@ -471,79 +475,7 @@ def register(mcp: FastMCP) -> None:
     # LOG CONFIGURATION
     # ==================================================================
 
-    @mcp.tool()
-    async def log_disk_filter_get(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """Get the disk log filter settings (which log types are enabled)."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.cmdb_get("log.disk/filter", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool()
-    async def log_disk_setting_get(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """Get the disk logging settings (log level, max log size, etc.)."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.cmdb_get("log.disk/setting", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool()
-    async def log_memory_setting_get(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """Get the memory logging settings."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.cmdb_get("log.memory/setting", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool()
-    async def log_fortianalyzer_setting_get(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """Get FortiAnalyzer logging configuration (server, port, status)."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.cmdb_get("log.fortianalyzer/setting", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool()
+    @mcp.tool(annotations=DESTRUCTIVE)
     async def log_fortianalyzer_setting_update(
         ctx: Context,
         status: Annotated[
@@ -560,16 +492,13 @@ def register(mcp: FastMCP) -> None:
                 description="Encryption algorithm: default, high, low, disable.",
             ),
         ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Update FortiAnalyzer logging settings."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         body: dict[str, Any] = {}
         if status is not None:
             body["status"] = status

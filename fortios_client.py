@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 from typing import Any
 
@@ -22,7 +23,7 @@ class FortiOSError(Exception):
 
 
 class FortiOSClient:
-    """Async client for the FortiOS 7.6.6 REST API (v2).
+    """Async client for the FortiOS 7.6 REST API (v2).
 
     Supports all four API sections:
     - ``/api/v2/cmdb/``   — Configuration Management DB (read/write)
@@ -48,12 +49,16 @@ class FortiOSClient:
         vdom: str = "root",
         verify_ssl: bool = False,
         timeout: float = 30.0,
+        name: str = "default",
+        read_only: bool = False,
     ) -> None:
         self.host = host.rstrip("/")
         self.api_token = api_token
         self.vdom = vdom
         self.verify_ssl = verify_ssl
         self.timeout = timeout
+        self.name = name
+        self.read_only = read_only
         self._client: httpx.AsyncClient | None = None
 
     # ------------------------------------------------------------------
@@ -93,6 +98,15 @@ class FortiOSClient:
             )
         return self._client
 
+    def _write_guard(self) -> None:
+        """Refuse write operations on an instance configured read-only."""
+        if self.read_only:
+            raise FortiOSError(
+                f"Instance '{self.name}' is configured read-only; "
+                f"write operations are refused.",
+                403,
+            )
+
     def _vdom_params(
         self, extra: dict[str, Any] | None = None, vdom: str | None = None
     ) -> dict[str, Any]:
@@ -104,15 +118,38 @@ class FortiOSClient:
     def _check_response(self, resp: httpx.Response) -> dict[str, Any]:
         """Parse and validate a FortiOS JSON response."""
         try:
-            body: dict[str, Any] = resp.json()
+            body: Any = resp.json()
         except Exception as exc:
-            raise FortiOSError(
-                f"Non-JSON response (HTTP {resp.status_code}): {resp.text[:300]}",
-                resp.status_code,
-            ) from exc
+            # FortiOS can emit raw non-UTF-8 bytes inside JSON strings --
+            # FortiAPs copy unsanitised scan memory into wifi/client's
+            # triangulation_regions[].wtp_id -- while the surrounding JSON
+            # stays well formed. Substituting the bad bytes recovers the
+            # whole body; only when that also fails is it truly not JSON.
+            try:
+                body = json.loads(resp.content.decode("utf-8", errors="replace"))
+            except Exception:
+                raise FortiOSError(
+                    f"Non-JSON response (HTTP {resp.status_code}): {resp.text[:300]}",
+                    resp.status_code,
+                ) from exc
 
-        http_status: int = body.get("http_status", resp.status_code)
-        if resp.status_code >= 400 or http_status >= 400:
+        # A ``vdom="*"`` query is the one case where FortiOS answers with a
+        # JSON array -- one envelope per VDOM -- instead of a single object.
+        # Collapse it to {vdom: envelope}, the shape FanOutClient already
+        # returns for instance="*", so both kinds of fan-out read alike.
+        if isinstance(body, list) and resp.status_code < 400:
+            return self._merge_vdom_envelopes(body, resp.status_code)
+
+        return self._check_envelope(
+            body if isinstance(body, dict) else {}, resp.status_code
+        )
+
+    def _check_envelope(
+        self, body: dict[str, Any], transport_status: int
+    ) -> dict[str, Any]:
+        """Raise :class:`FortiOSError` if one FortiOS envelope reports failure."""
+        http_status: int = body.get("http_status", transport_status)
+        if transport_status >= 400 or http_status >= 400:
             status_msg = body.get("status", "error")
             error_msg = body.get("cli_error", body.get("http_method", str(body)))
             raise FortiOSError(
@@ -121,6 +158,31 @@ class FortiOSClient:
                 body,
             )
         return body
+
+    def _merge_vdom_envelopes(
+        self, envelopes: list[Any], transport_status: int
+    ) -> dict[str, Any]:
+        """Key each per-VDOM envelope by its VDOM name.
+
+        One VDOM failing contributes the standard ``{"error": ...,
+        "status_code": ...}`` payload in its own slot rather than failing the
+        whole query, matching how ``FanOutClient`` treats one unreachable
+        instance.
+        """
+        merged: dict[str, Any] = {}
+        for index, envelope in enumerate(envelopes):
+            if not isinstance(envelope, dict):
+                merged[f"vdom[{index}]"] = {
+                    "error": f"Unexpected non-object entry: {envelope!r}"[:300],
+                    "status_code": 0,
+                }
+                continue
+            key = str(envelope.get("vdom") or f"vdom[{index}]")
+            try:
+                merged[key] = self._check_envelope(envelope, transport_status)
+            except FortiOSError as exc:
+                merged[key] = {"error": str(exc), "status_code": exc.status_code}
+        return merged
 
     # ------------------------------------------------------------------
     # CMDB  (/api/v2/cmdb/…)
@@ -146,6 +208,7 @@ class FortiOSClient:
         vdom: str | None = None,
     ) -> dict[str, Any]:
         """POST /api/v2/cmdb/{path} — create a configuration object."""
+        self._write_guard()
         client = self._client_guard()
         url = f"{self._BASE}/cmdb/{path.lstrip('/')}"
         resp = await client.post(url, json=body, params=self._vdom_params(params, vdom))
@@ -159,6 +222,7 @@ class FortiOSClient:
         vdom: str | None = None,
     ) -> dict[str, Any]:
         """PUT /api/v2/cmdb/{path} — replace a configuration object."""
+        self._write_guard()
         client = self._client_guard()
         url = f"{self._BASE}/cmdb/{path.lstrip('/')}"
         resp = await client.put(url, json=body, params=self._vdom_params(params, vdom))
@@ -171,6 +235,7 @@ class FortiOSClient:
         vdom: str | None = None,
     ) -> dict[str, Any]:
         """DELETE /api/v2/cmdb/{path} — remove a configuration object."""
+        self._write_guard()
         client = self._client_guard()
         url = f"{self._BASE}/cmdb/{path.lstrip('/')}"
         resp = await client.delete(url, params=self._vdom_params(params, vdom))
@@ -200,6 +265,7 @@ class FortiOSClient:
         vdom: str | None = None,
     ) -> dict[str, Any]:
         """POST /api/v2/monitor/{path} — trigger a monitor action."""
+        self._write_guard()
         client = self._client_guard()
         url = f"{self._BASE}/monitor/{path.lstrip('/')}"
         resp = await client.post(
@@ -231,6 +297,7 @@ class FortiOSClient:
         vdom: str | None = None,
     ) -> dict[str, Any]:
         """POST /api/v2/log/{path} — start a log search or action."""
+        self._write_guard()
         client = self._client_guard()
         url = f"{self._BASE}/log/{path.lstrip('/')}"
         resp = await client.post(
@@ -262,6 +329,7 @@ class FortiOSClient:
         vdom: str | None = None,
     ) -> dict[str, Any]:
         """POST /api/v2/service/{path}."""
+        self._write_guard()
         client = self._client_guard()
         url = f"{self._BASE}/service/{path.lstrip('/')}"
         resp = await client.post(

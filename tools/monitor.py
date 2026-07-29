@@ -11,69 +11,68 @@ from typing import Annotated, Any
 from mcp.server.fastmcp import FastMCP, Context
 from pydantic import Field
 
-from fortios_client import FortiOSClient, FortiOSError
+from fortios_client import FortiOSError
+from instances import FortiOSAPI
+from paging import PageError, normalise, page_query, paginate
+from resources import MonitorResource
+from tool_annotations import READ_ONLY
+from tool_params import CountParam, InstanceParam, StartParam, VdomParam
+from tools._read import read_resource, resource_table_doc
 
 
 def register(mcp: FastMCP) -> None:
     """Register all monitoring tools."""
 
+    async def monitor_read(
+        ctx: Context,
+        resource: Annotated[
+            MonitorResource, Field(description="Which monitor resource to read.")
+        ],
+        name: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Object key to fetch. Omit to list every object. "
+                    "Rejected for singletons and monitor endpoints."
+                ),
+            ),
+        ] = None,
+        start: StartParam = None,
+        count: CountParam = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
+    ) -> dict[str, Any]:
+        """Placeholder replaced below with the generated resource table."""
+        return await read_resource(
+            ctx, "monitor", resource, name, instance, vdom, start, count
+        )
+
+    monitor_read.__doc__ = (
+        "Read live device, network and security telemetry.\n\n"
+        "Omit `name` to list a resource, or pass it to fetch one object by "
+        "key.\n\n" + resource_table_doc("monitor")
+    )
+    mcp.tool(annotations=READ_ONLY)(monitor_read)
+
     # ==================================================================
     # NETWORK
     # ==================================================================
 
-    @mcp.tool()
-    async def monitor_network_arp_list(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """Get the ARP table (IP-to-MAC address mappings)."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.monitor_get("network/arp", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool()
-    async def monitor_network_lldp_neighbors(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """Get LLDP neighbor information discovered on all interfaces."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.monitor_get("network/lldp/neighbors", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_interface_dhcp_status(
         ctx: Context,
         interface: Annotated[
             str | None,
             Field(default=None, description="Interface name to get DHCP status for."),
         ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Get DHCP lease status on an interface (client side)."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         params: dict[str, Any] = {}
         if interface:
             params["interface_name"] = interface
@@ -84,138 +83,80 @@ def register(mcp: FastMCP) -> None:
 
     # ==================================================================
     # FORTIVIEW / TOP TALKERS
+    #
+    # All three hit fortiview/realtime-statistics and differ only by
+    # report_by. The old path (fortiview/statistics) and the old parameter
+    # name ("type") both predate FortiOS 7.x: live testing on 7.6.6 on
+    # 2026-07-28 showed the path 404s outright, so every one of these tools
+    # was returning an error rather than data. Note that report_by silently
+    # falls back to the default source view for a value FortiOS does not
+    # recognise -- it does not reject one -- so a wrong value here returns
+    # plausible but incorrect data. Only add a value confirmed on a device.
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_fortiview_top_sources(
         ctx: Context,
         count: Annotated[
             int, Field(default=20, description="Number of top entries to return.")
         ] = 20,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Get FortiView top sources (most active source IPs by session count)."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             return await client.monitor_get(
-                "fortiview/statistics", {"type": "source", "count": count}, vdom=vdom
+                "fortiview/realtime-statistics",
+                {"report_by": "source", "count": count},
+                vdom=vdom,
             )
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_fortiview_top_destinations(
         ctx: Context,
         count: Annotated[
             int, Field(default=20, description="Number of top entries to return.")
         ] = 20,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Get FortiView top destinations (most accessed destination IPs)."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             return await client.monitor_get(
-                "fortiview/statistics",
-                {"type": "destination", "count": count},
+                "fortiview/realtime-statistics",
+                {"report_by": "destination", "count": count},
                 vdom=vdom,
             )
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_fortiview_top_applications(
         ctx: Context,
         count: Annotated[
             int, Field(default=20, description="Number of top entries to return.")
         ] = 20,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Get FortiView top applications by bandwidth or session count."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             return await client.monitor_get(
-                "fortiview/statistics",
-                {"type": "application", "count": count},
+                "fortiview/realtime-statistics",
+                {"report_by": "application", "count": count},
                 vdom=vdom,
             )
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool()
-    async def monitor_fortiview_top_threat_map(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """Get FortiView threat map data (geo-blocking source countries)."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.monitor_get(
-                "fortiview/statistics", {"type": "threat"}, vdom=vdom
-            )
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    # ==================================================================
-    # LICENSE / FORTIGUARD STATUS
-    # ==================================================================
-
-    @mcp.tool()
-    async def monitor_license_status(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """Get FortiGuard license and subscription status for all services."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.monitor_get("license/status", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool()
-    async def monitor_license_forticare_resellers(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """Get FortiCare reseller and support contract information."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.monitor_get("license/forticare-resellers", vdom=vdom)
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
@@ -223,128 +164,50 @@ def register(mcp: FastMCP) -> None:
     # ENDPOINT CONTROL
     # ==================================================================
 
-    @mcp.tool()
-    async def monitor_endpoint_summary(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """Get endpoint control (FortiClient) summary statistics."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.monitor_get("endpoint-control/summary", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_endpoint_record_list(
         ctx: Context,
-        count: Annotated[
-            int, Field(default=100, description="Number of records to return.")
-        ] = 100,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        start: StartParam = None,
+        count: CountParam = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """List registered endpoint (FortiClient) records."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
-            return await client.monitor_get(
-                "endpoint-control/record-list", {"count": count}, vdom=vdom
+            page_start, page_count = normalise(start, count)
+        except PageError as exc:
+            return {"error": str(exc)}
+        try:
+            payload = await client.monitor_get(
+                "endpoint-control/record-list",
+                page_query(page_start, page_count),
+                vdom=vdom,
             )
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
-
-    # ==================================================================
-    # IPS / UTM
-    # ==================================================================
-
-    @mcp.tool()
-    async def monitor_ips_anomaly(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """Get IPS anomaly detection statistics."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.monitor_get("ips/anomaly", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool()
-    async def monitor_utm_app_categories(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """Get UTM application category statistics."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.monitor_get("utm/app-lookup", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
+        return paginate(payload, page_start, page_count)
 
     # ==================================================================
     # SWITCH CONTROLLER
     # ==================================================================
 
-    @mcp.tool()
-    async def monitor_switch_controller_managed_switch(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """Get status of all FortiSwitch managed switches."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.monitor_get(
-                "switch-controller/managed-switch", vdom=vdom
-            )
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_switch_controller_port_stats(
         ctx: Context,
         switch_id: Annotated[
             str | None,
             Field(default=None, description="FortiSwitch serial number to query."),
         ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Get per-port traffic statistics for managed FortiSwitch devices."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         params: dict[str, Any] = {}
         if switch_id:
             params["mkey"] = switch_id
@@ -356,38 +219,17 @@ def register(mcp: FastMCP) -> None:
             return {"error": str(exc), "status_code": exc.status_code}
 
     # ==================================================================
-    # SECURITY RATING
-    # ==================================================================
-
-    @mcp.tool()
-    async def monitor_security_rating_summary(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """Get the Security Rating summary score and findings."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.monitor_get("system/security-rating", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    # ==================================================================
     # CONFIG BACKUP
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_system_config_backup(
         ctx: Context,
         scope: Annotated[
             str,
             Field(default="global", description="Backup scope: global or vdom."),
         ] = "global",
+        instance: InstanceParam = None,
         vdom: Annotated[
             str | None,
             Field(
@@ -397,7 +239,9 @@ def register(mcp: FastMCP) -> None:
         ] = None,
     ) -> dict[str, Any]:
         """Trigger a configuration backup and get the backup data (base64-encoded)."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         params: dict[str, Any] = {"scope": scope}
         if vdom:
             params["vdom"] = vdom
@@ -407,32 +251,10 @@ def register(mcp: FastMCP) -> None:
             return {"error": str(exc), "status_code": exc.status_code}
 
     # ==================================================================
-    # RUNNING PROCESSES
-    # ==================================================================
-
-    @mcp.tool()
-    async def monitor_system_process_list(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """List running FortiOS processes with CPU and memory usage."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.monitor_get("system/running-processes", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    # ==================================================================
     # INTERFACES (real-time stats)
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_interface_stats(
         ctx: Context,
         interface: Annotated[
@@ -442,16 +264,13 @@ def register(mcp: FastMCP) -> None:
                 description="Interface name. If not specified, returns all interfaces.",
             ),
         ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Get real-time interface traffic statistics (bytes in/out, errors, drops)."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         params: dict[str, Any] = {}
         if interface:
             params["interface_name"] = interface
@@ -466,7 +285,7 @@ def register(mcp: FastMCP) -> None:
     # DIAGNOSE / PING / TRACEROUTE
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_network_ping(
         ctx: Context,
         destination: Annotated[
@@ -482,16 +301,13 @@ def register(mcp: FastMCP) -> None:
         count: Annotated[
             int, Field(default=5, description="Number of ICMP pings to send.")
         ] = 5,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Ping a remote host from the FortiGate device."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         params: dict[str, Any] = {"destination": destination, "count": count}
         if source_ip:
             params["source"] = source_ip
@@ -506,22 +322,19 @@ def register(mcp: FastMCP) -> None:
     # GEOIP
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_geoip_lookup(
         ctx: Context,
         ip_address: Annotated[
             str, Field(description="IPv4 address to look up geolocation for.")
         ],
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Look up the geographic location (country, coordinates) of an IP address."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             return await client.monitor_get(
                 "geoip/geoip-query", {"ip_addr": ip_address}, vdom=vdom

@@ -93,10 +93,28 @@ git push origin feat/my-new-tool
 
 ### Adding a new MCP tool
 
+A **new readable endpoint** (a plain GET with no side effects) is usually
+*not* a new function. It is a new row in `resources.py`'s table for its
+domain, plus that domain's `Literal` alias (e.g. `FirewallResource` for
+`firewall_read`) gaining the new resource name. The nine `<domain>_read`
+tools in `tools/system.py`, `tools/firewall.py`, etc. dispatch through
+`tools/_read.py`'s `read_resource()` against that table, so a new row is
+picked up automatically — no new tool, no new test file. Note that
+`scripts/generate_resources.py`, the one-shot script that originally derived
+`resources.py` from the alias tools it replaced, has been removed: it read
+docstrings off tools that no longer exist, so it cannot regenerate the
+table. Edit `resources.py` directly, and add a case to
+`tests/test_resource_tables.py` if the new row needs its own coverage beyond
+the existing parametrized checks.
+
+A **new writing endpoint** (create/update/delete, or anything with a side
+effect) is still a new tool function:
+
 1. Choose the correct module in `tools/` (or propose a new one).
 2. Define the tool function with full typing and a clear docstring — the docstring becomes the tool description shown to the LLM.
-3. Register the tool in `server.py` if it requires registration outside the module (check how existing tools are registered).
-4. Add at least one test in `tests/` covering the happy path and one error case.
+3. Declare a tool annotation category: `@mcp.tool(annotations=READ_ONLY)`, or `CREATES` / `UPDATES` / `DESTRUCTIVE` / `UNCONSTRAINED` from `tool_annotations.py`. A tool is `READ_ONLY` only when a call leaves both the FortiGate's stored configuration and its live session state as it found them — the HTTP verb does not decide it. If the tool writes, add it to `EXPECTED_MUTATING` in `tests/test_tool_annotations.py` in the same commit; that edit is the review prompt. See `docs/superpowers/specs/2026-07-27-mcp-tool-annotations-design.md`.
+4. Register the tool in `server.py` if it requires registration outside the module (check how existing tools are registered).
+5. Add at least one test in `tests/` covering the happy path and one error case.
 
 ---
 

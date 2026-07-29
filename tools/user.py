@@ -10,54 +10,54 @@ from typing import Annotated, Any
 from mcp.server.fastmcp import FastMCP, Context
 from pydantic import Field
 
-from fortios_client import FortiOSClient, FortiOSError
+from fortios_client import FortiOSError
+from instances import FortiOSAPI
+from resources import UserResource
+from tool_annotations import CREATES, DESTRUCTIVE, READ_ONLY
+from tool_params import CountParam, InstanceParam, StartParam, VdomParam
+from tools._read import read_resource, resource_table_doc
 
 
 def register(mcp: FastMCP) -> None:
     """Register all user management tools."""
 
+    async def user_read(
+        ctx: Context,
+        resource: Annotated[
+            UserResource, Field(description="Which user resource to read.")
+        ],
+        name: Annotated[
+            str | None,
+            Field(
+                default=None,
+                description=(
+                    "Object key to fetch. Omit to list every object. "
+                    "Rejected for singletons and monitor endpoints."
+                ),
+            ),
+        ] = None,
+        start: StartParam = None,
+        count: CountParam = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
+    ) -> dict[str, Any]:
+        """Placeholder replaced below with the generated resource table."""
+        return await read_resource(
+            ctx, "user", resource, name, instance, vdom, start, count
+        )
+
+    user_read.__doc__ = (
+        "Read user, group and authentication-server configuration.\n\n"
+        "Omit `name` to list a resource, or pass it to fetch one object by "
+        "key.\n\n" + resource_table_doc("user")
+    )
+    mcp.tool(annotations=READ_ONLY)(user_read)
+
     # ==================================================================
     # LOCAL USERS
     # ==================================================================
 
-    @mcp.tool()
-    async def user_local_list(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """List all local user accounts."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.cmdb_get("user/local", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool()
-    async def user_local_get(
-        ctx: Context,
-        name: Annotated[str, Field(description="Local username.")],
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """Get a specific local user account."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.cmdb_get(f"user/local/{name}", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool()
+    @mcp.tool(annotations=CREATES)
     async def user_local_create(
         ctx: Context,
         name: Annotated[str, Field(description="Username (must be unique).")],
@@ -87,16 +87,13 @@ def register(mcp: FastMCP) -> None:
                 description="Two-factor auth: disable, fortitoken, email, sms.",
             ),
         ] = "disable",
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Create a new local user account."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         body: dict[str, Any] = {
             "name": name,
             "passwd": password,
@@ -113,7 +110,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=DESTRUCTIVE)
     async def user_local_update(
         ctx: Context,
         name: Annotated[str, Field(description="Username to update.")],
@@ -130,16 +127,13 @@ def register(mcp: FastMCP) -> None:
         two_factor: Annotated[
             str | None, Field(default=None, description="New two-factor method.")
         ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Update a local user account."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         body: dict[str, Any] = {}
         if password is not None:
             body["passwd"] = password
@@ -156,67 +150,11 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
-    async def user_local_delete(
-        ctx: Context,
-        name: Annotated[str, Field(description="Username to delete.")],
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """Delete a local user account."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.cmdb_delete(f"user/local/{name}", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
     # ==================================================================
     # USER GROUPS
     # ==================================================================
 
-    @mcp.tool()
-    async def user_group_list(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """List all user groups."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.cmdb_get("user/group", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool()
-    async def user_group_get(
-        ctx: Context,
-        name: Annotated[str, Field(description="User group name.")],
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """Get a specific user group and its members."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.cmdb_get(f"user/group/{name}", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool()
+    @mcp.tool(annotations=CREATES)
     async def user_group_create(
         ctx: Context,
         name: Annotated[str, Field(description="Group name.")],
@@ -238,16 +176,13 @@ def register(mcp: FastMCP) -> None:
                 description="Allow concurrent logins: enable or disable.",
             ),
         ] = "enable",
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Create a new user group."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         body: dict[str, Any] = {
             "name": name,
             "group-type": group_type,
@@ -260,67 +195,11 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
-    async def user_group_delete(
-        ctx: Context,
-        name: Annotated[str, Field(description="User group name to delete.")],
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """Delete a user group."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.cmdb_delete(f"user/group/{name}", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
     # ==================================================================
     # RADIUS SERVERS
     # ==================================================================
 
-    @mcp.tool()
-    async def user_radius_list(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """List all RADIUS authentication server configurations."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.cmdb_get("user/radius", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool()
-    async def user_radius_get(
-        ctx: Context,
-        name: Annotated[str, Field(description="RADIUS server name.")],
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """Get a specific RADIUS server configuration."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.cmdb_get(f"user/radius/{name}", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool()
+    @mcp.tool(annotations=CREATES)
     async def user_radius_create(
         ctx: Context,
         name: Annotated[str, Field(description="RADIUS server name.")],
@@ -339,16 +218,13 @@ def register(mcp: FastMCP) -> None:
         acct_port: Annotated[
             int, Field(default=1813, description="RADIUS accounting port.")
         ] = 1813,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Create a new RADIUS server configuration."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         body: dict[str, Any] = {
             "name": name,
             "server": server,
@@ -366,25 +242,7 @@ def register(mcp: FastMCP) -> None:
     # LDAP SERVERS
     # ==================================================================
 
-    @mcp.tool()
-    async def user_ldap_list(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """List all LDAP authentication server configurations."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.cmdb_get("user/ldap", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool()
+    @mcp.tool(annotations=CREATES)
     async def user_ldap_create(
         ctx: Context,
         name: Annotated[str, Field(description="LDAP server name.")],
@@ -415,16 +273,13 @@ def register(mcp: FastMCP) -> None:
                 default="disable", description="Use TLS: disable, starttls, or ldaps."
             ),
         ] = "disable",
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Create a new LDAP server configuration."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         body: dict[str, Any] = {
             "name": name,
             "server": server,
@@ -442,54 +297,10 @@ def register(mcp: FastMCP) -> None:
             return {"error": str(exc), "status_code": exc.status_code}
 
     # ==================================================================
-    # TACACS+ SERVERS
-    # ==================================================================
-
-    @mcp.tool()
-    async def user_tacacs_list(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """List all TACACS+ authentication server configurations."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.cmdb_get("user/tacacs+", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    # ==================================================================
-    # SAML / SSO
-    # ==================================================================
-
-    @mcp.tool()
-    async def user_saml_list(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """List all SAML identity provider configurations."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.cmdb_get("user/saml", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    # ==================================================================
     # MONITOR: User Sessions
     # ==================================================================
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_user_firewall(
         ctx: Context,
         ip_address: Annotated[
@@ -498,16 +309,13 @@ def register(mcp: FastMCP) -> None:
         username: Annotated[
             str | None, Field(default=None, description="Filter by username.")
         ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """List authenticated firewall users and their session information."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         params: dict[str, Any] = {}
         if ip_address:
             params["ipv4"] = ip_address
@@ -518,25 +326,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
-    async def monitor_user_fortitoken_list(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """List FortiToken hardware/software tokens and their status."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.monitor_get("user/fortitoken", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool()
+    @mcp.tool(annotations=DESTRUCTIVE)
     async def monitor_user_disconnect(
         ctx: Context,
         id_type: Annotated[
@@ -550,16 +340,13 @@ def register(mcp: FastMCP) -> None:
                 description="Username or IP address (required for username/ip type).",
             ),
         ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Disconnect an authenticated firewall user session."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         body: dict[str, Any] = {"type": id_type}
         if id_value:
             body["id"] = id_value

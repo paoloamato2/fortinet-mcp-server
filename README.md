@@ -26,6 +26,10 @@
   - [4. Run with MCP Inspector](#4-run-with-mcp-inspector)
   - [5. Install in Claude Desktop](#5-install-in-claude-desktop)
 - [HTTP Mode](#http-mode)
+- [Managing Multiple FortiGates](#managing-multiple-fortigates)
+  - [Targeting a device](#targeting-a-device)
+  - [Read-only devices](#read-only-devices)
+  - [Backward compatibility](#backward-compatibility)
 - [Usage Examples](#usage-examples)
 - [Project Structure](#project-structure)
 - [Security Notes](#security-notes)
@@ -36,32 +40,66 @@
 
 ## Features
 
-- **204+ typed MCP tools** organized by functional area (system, firewall, VPN, router, user, monitor, log, security, wireless)
-- **5 generic pass-through tools** that cover all 1,536 FortiOS API endpoints
+> **Changed in this release:** 160 single-purpose read and delete tools were
+> replaced by nine `<domain>_read` tools and one `fortios_delete`, cutting the
+> advertised tool surface by 55%. `ips_sensor_list` is now
+> `security_read(resource="ips_sensor")`; `user_local_get(name="alice")` is
+> `user_read(resource="local", name="alice")`; `firewall_address_delete` is
+> `fortios_delete(resource="firewall_address", name=...)`; `system_status()` is
+> `system_read(resource="status")`.
+
+- **80 typed MCP tools** organized by functional area (system, firewall, VPN, router, user, monitor, log, security, wireless), plus a fleet-management tool (`fortigate_list`) — nine of the 80 are per-domain `<domain>_read` tools that cover 121 read-only resources through a `resource` enum
+- **Reads are paged by default.** Every list read — the nine `<domain>_read`
+  tools, every typed `*_list` tool, and the generic `cmdb_list`/`monitor_get`
+  pass-throughs — returns at most 50 rows and at most ~25,000 characters,
+  whichever binds first, and reports what it did:
+
+  ```json
+  "_page": {"start": 0, "returned": 3, "more": true, "next_start": 3, "total": 77}
+  ```
+
+  Advance with `start=_page.next_start` — it is `null` once there is no more,
+  and it is the only reliable next offset: `start + count` is the wrong
+  inference whenever the character cap has trimmed a page short of `count`.
+  `total` is populated for CMDB reads and is `null` for monitor endpoints,
+  which do not report one. The character cap applies even to an explicit
+  `count`, so `count` is a ceiling rather than a promise — `_page.returned`
+  always reports what came back.
+- **10 generic pass-through tools** that cover all 1,536 FortiOS API endpoints, including the universal `fortios_delete`
 - Async HTTP client with Bearer-token authentication via `httpx`
 - Full support for **CMDB, Monitor, Log, and Service** API sections
 - Configurable SSL verification (self-signed certificates supported)
 - Compatible with **multi-VDOM** environments
 - Runs as **stdio** (Claude Desktop) or **HTTP** server (remote/cloud use)
+- **Every tool advertises MCP `ToolAnnotations`** (`readOnlyHint`, `destructiveHint`,
+  `idempotentHint`, `openWorldHint`) so a gating client can auto-approve reads and still
+  confirm writes: 47 of the 91 tools advertise read-only, 44 advertise a write. See
+  `tool_annotations.py`.
 
 ---
 
 ## Tool Categories
 
+Each of the nine functional modules below also registers one `<domain>_read`
+tool (e.g. `system_read`, `firewall_read`) that covers every read-only
+resource in that domain through a `resource` enum — see the migration note
+above and [Usage Examples](#usage-examples).
+
 | Module | # Tools | Description |
 |--------|--------:|-------------|
-| **Generic** | 5 | `cmdb_list/get/create/update/delete`, `monitor_get/action`, `log_get`, `service_call` — cover **ALL** endpoints |
-| **System** | 27 | Interfaces, DNS, NTP, admins, DHCP, SNMP, certificates, VDOMs, syslog |
-| **Firewall** | 32 | Policies (IPv4/IPv6), addresses, address groups, services, VIPs, IP pools, schedules, sessions |
-| **VPN** | 22 | IPsec Phase 1/2, SSL VPN portals/settings, tunnel up/down, VPN certificates |
-| **Router** | 17 | Static routes, OSPF, BGP, RIP, prefix lists, route maps, SD-WAN health |
-| **User** | 18 | Local users, groups, RADIUS, LDAP, TACACS+, SAML, authenticated sessions |
-| **Monitor** | 18 | ARP, FortiView top talkers, endpoint control, IPS stats, switch controller, config backup |
-| **Log** | 18 | Traffic, event, VPN, user, virus, webfilter, IPS, app-ctrl, DNS logs + log config |
-| **Security** | 29 | IPS, AV, webfilter, app control, DLP, email filter, DNS filter, WAF, ICAP, ssh-filter, ZTNA |
-| **Wireless** | 18 | AP profiles, WTPs, SSIDs (VAPs), Hotspot 2.0, connected clients, rogue APs |
+| **Generic** | 10 | `cmdb_list/get/create/update/delete`, `monitor_get/action`, `log_get`, `service_call`, `fortios_delete` — cover **ALL** endpoints |
+| **System** | 10 | `system_read` (19 resources) plus admins, DHCP servers, interfaces, DNS, NTP, global config |
+| **Firewall** | 16 | `firewall_read` (15 resources) plus policies, addresses, address groups, services, VIPs, IP pools, session control |
+| **VPN** | 9 | `vpn_read` (12 resources) plus IPsec Phase 1/2, SSL VPN portals/settings, tunnel up/down |
+| **Router** | 6 | `router_read` (17 resources) plus BGP, static routes, route lookups |
+| **User** | 8 | `user_read` (7 resources) plus local users, groups, RADIUS, LDAP, session disconnect |
+| **Monitor** | 11 | `monitor_read` (11 resources) plus FortiView, interface stats, GeoIP, ICMP ping, config backup |
+| **Log** | 13 | `log_read` (4 resources) plus traffic, event, virus, webfilter, IPS, app-ctrl, DNS logs, FortiAnalyzer config |
+| **Security** | 3 | `security_read` (28 resources) plus AV profile create, IPS sensor create |
+| **Wireless** | 4 | `wireless_read` (12 resources) plus VAP create, AP status, client list |
+| **Fleet** | 1 | `fortigate_list` — inspect the configured FortiGates themselves (name, description, host, VDOM, read-only status, optional health check) |
 
-**Total: 204+ tools**
+**Total: 91 tools**
 
 ---
 
@@ -169,6 +207,88 @@ This mode is useful for shared team setups or cloud-hosted deployments.
 
 ---
 
+## Managing Multiple FortiGates
+
+One server process can manage a fleet. The LLM picks the target per tool call,
+so the 91-tool set is loaded into its context once rather than once per device.
+
+Point `FORTIOS_INSTANCES_FILE` at a JSON array (see
+[`fortigates.example.json`](fortigates.example.json)):
+
+```json
+[
+  {
+    "name": "hq-fw",
+    "description": "HQ perimeter firewall, Vienna. Production internet edge.",
+    "host": "https://10.0.0.1",
+    "api_token": "...",
+    "read_only": true
+  },
+  {
+    "name": "dc-edge",
+    "description": "Datacenter edge, one VDOM per tenant.",
+    "host": "https://10.9.0.1",
+    "api_token_env": "DC_EDGE_TOKEN",
+    "vdom": "tenant1"
+  }
+]
+```
+
+| Field | Required | Default |
+|---|---|---|
+| `name` | yes | — `[A-Za-z0-9._-]`, 1–64 chars; `*` is reserved |
+| `description` | yes | — shown to the LLM so it can pick the right device |
+| `host` | yes | — |
+| `api_token` or `api_token_env` | exactly one key present | — `api_token_env` names an env var holding the token; either field must be a non-empty string |
+| `vdom` | no | `FORTIOS_VDOM`, else `root` |
+| `verify_ssl` | no | `FORTIOS_VERIFY_SSL`, else `false` |
+| `timeout` | no | `FORTIOS_TIMEOUT`, else `30` |
+| `read_only` | no | `false` |
+
+### Targeting a device
+
+Every tool takes an optional `instance` parameter:
+
+```
+# Target one device
+cmdb_list(resource_path="firewall/policy", instance="dc-edge")
+
+# Read from every device at once — returns results keyed by instance name
+cmdb_list(resource_path="firewall/policy", instance="*")
+
+# Discover what's configured
+fortigate_list()
+fortigate_list(check_health=True)   # adds reachability, firmware, serial
+```
+
+`instance` may be omitted only when exactly one device is configured. With two
+or more, omitting it returns an error listing the valid names rather than
+guessing — a config change must never land on the wrong firewall.
+
+### Read-only devices
+
+`"read_only": true` makes the server refuse every write (create, update,
+delete, and monitor/log/service actions) against that device before any request
+is sent. Reads, including `instance="*"` fan-out, still work. Use it to expose
+production firewalls safely.
+
+`instance="*"` is read-only in all cases; write tools reject it. Both refusals are keyed
+on the HTTP method a tool calls (any `cmdb_post`/`cmdb_put`/`cmdb_delete`/`monitor_post`/
+`log_post`/`service_post`), not on whether that call changes anything — so `instance="*"`
+and a `read_only: true` instance both refuse `monitor_network_ping` even though its tool
+annotation is `READ_ONLY` (it POSTs an ICMP probe but changes nothing on the device). See
+`tool_annotations.py` for that classification and its rationale. Both refusals report
+`status_code: 403`, distinguishing "refused by policy" from the `0` used for network or
+otherwise unknown failures.
+
+### Backward compatibility
+
+Leaving `FORTIOS_INSTANCES_FILE` unset keeps the existing single-device setup
+working unchanged: `FORTIOS_HOST` and `FORTIOS_API_TOKEN` become one instance
+named `default`, and `instance` can be omitted everywhere.
+
+---
+
 ## Usage Examples
 
 ### Via Claude Desktop
@@ -188,14 +308,21 @@ Once installed, you can ask Claude natural-language questions such as:
 # List firewall policies filtered by action
 firewall_policy_list(filter_action="deny")
 
-# Get system status
-system_status()
+# Get system status (system_status was folded into system_read)
+system_read(resource="status")
 
 # Check IPsec VPN tunnels
 monitor_vpn_ipsec()
 
 # Query forward traffic logs for a specific source IP
 log_traffic_forward(srcip="10.10.1.100", rows=50)
+
+# Per-domain read tools cover everything the old *_list/*_get tools did
+security_read(resource="ips_sensor")                       # was ips_sensor_list()
+user_read(resource="local", name="alice")                  # was user_local_get(name="alice")
+
+# Delete any resource the read tools can list
+fortios_delete(resource="firewall_address", name="old-addr")  # was firewall_address_delete(name=...)
 
 # Generic: list any CMDB resource (full API coverage)
 cmdb_list("casb/profile")
@@ -213,21 +340,27 @@ monitor_get("registration/forticloud")
 fortinet-mcp-server/
 ├── server.py              # FastMCP entry point, lifespan, tool registration
 ├── fortios_client.py      # Async HTTP client (CMDB/Monitor/Log/Service)
+├── instances.py           # Fleet configuration loading and the instance registry
+├── tool_annotations.py    # ToolAnnotations categories (read-only vs. write hints)
+├── resources.py           # The FortiOS resource table behind the *_read tools
+├── tool_params.py         # Shared parameter models for the *_read tools
 ├── pyproject.toml         # Project metadata and dependencies
 ├── .env.example           # Environment variable template
 ├── README.md              # This file
 └── tools/
     ├── __init__.py
-    ├── generic.py         # Generic pass-through tools (all 1536 endpoints)
-    ├── system.py          # System config + monitoring
-    ├── firewall.py        # Firewall policies, addresses, VIPs, sessions
-    ├── vpn.py             # IPsec + SSL VPN config and monitoring
-    ├── router.py          # Static routes, OSPF, BGP, SD-WAN
-    ├── user.py            # Local users, groups, RADIUS, LDAP, sessions
-    ├── monitor.py         # Network monitoring, FortiView, endpoint control
-    ├── log.py             # Log retrieval and configuration
-    ├── security.py        # IPS, AV, webfilter, DLP, WAF, ZTNA profiles
-    └── wireless.py        # WiFi APs, SSIDs, clients, rogue APs
+    ├── _read.py           # read_resource() dispatcher shared by every *_read tool
+    ├── generic.py         # Generic pass-through tools (all 1536 endpoints) + fortios_delete
+    ├── fleet.py           # fortigate_list fleet meta tool
+    ├── system.py          # System config + monitoring + system_read
+    ├── firewall.py        # Firewall policies, addresses, VIPs, sessions + firewall_read
+    ├── vpn.py             # IPsec + SSL VPN config and monitoring + vpn_read
+    ├── router.py          # Static routes, OSPF, BGP, SD-WAN + router_read
+    ├── user.py            # Local users, groups, RADIUS, LDAP, sessions + user_read
+    ├── monitor.py         # Network monitoring, FortiView, endpoint control + monitor_read
+    ├── log.py             # Log retrieval and configuration + log_read
+    ├── security.py        # IPS, AV, webfilter, DLP, WAF, ZTNA profiles + security_read
+    └── wireless.py        # WiFi APs, SSIDs, clients, rogue APs + wireless_read
 ```
 
 ---
@@ -235,10 +368,21 @@ fortinet-mcp-server/
 ## Security Notes
 
 - The API token grants the same access level as its associated admin profile. Follow the **principle of least privilege** — create a restricted profile if you only need read access.
+- **Tool annotations are advisory, not a security boundary.** Every tool's `readOnlyHint`/`destructiveHint`/etc. describe what a call will do so an MCP client can decide what to auto-approve, but the server enforces nothing based on them — the actual guardrails are the API token's admin profile and per-instance `read_only: true`. Also note `readOnlyHint=true` covers stored config and live session state, not response *sensitivity*: `monitor_system_config_backup` and a few other readers return secrets in an otherwise-unremarkable read.
 - Set `FORTIOS_VERIFY_SSL=true` in production and ensure your FortiGate has a valid TLS certificate.
 - The server runs **locally over stdio** by default — it is not exposed over the network unless HTTP mode is enabled.
 - **Never commit your `.env` file or expose your API token** in logs, issues, or code.
 - Rotate your API token regularly and revoke it immediately if compromised.
+- **`FORTIOS_INSTANCES_FILE` holds secrets too.** If you use inline `api_token`
+  values, your fleet file contains as many live API tokens as it has entries —
+  treat it exactly like `.env`. `.gitignore` only excludes a file literally
+  named `fortigates.json` in the repo root; if you point
+  `FORTIOS_INSTANCES_FILE` at a **differently-named** file (or one outside the
+  repo), it is **not** covered by that rule and can be committed by accident.
+  Prefer `api_token_env` instead of `api_token` for each instance — it lets
+  you keep every token out of the file entirely, sourcing it from the
+  environment (or a secrets manager) at load time, so the fleet file itself
+  contains no credentials and is safe to keep under looser access control.
 
 ---
 

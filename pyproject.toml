@@ -52,3 +52,8 @@ dev = [
     "pytest-httpx>=0.35.0",
     "ruff>=0.15.9",
 ]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = ["."]

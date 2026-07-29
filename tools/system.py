@@ -10,148 +10,59 @@ from typing import Annotated, Any
 from mcp.server.fastmcp import FastMCP, Context
 from pydantic import Field
 
-from fortios_client import FortiOSClient, FortiOSError
+from fortios_client import FortiOSError
+from instances import FortiOSAPI
+from paging import PageError, normalise, page_query, paginate
+from resources import SystemResource
+from tool_annotations import CREATES, DESTRUCTIVE, READ_ONLY
+from tool_params import CountParam, InstanceParam, StartParam, VdomParam
+from tools._read import read_resource, resource_table_doc
 
 
 def register(mcp: FastMCP) -> None:
     """Register system tools."""
 
-    # ------------------------------------------------------------------
-    # System Status & Info
-    # ------------------------------------------------------------------
-
-    @mcp.tool()
-    async def system_status(
+    async def system_read(
         ctx: Context,
-        vdom: Annotated[
+        resource: Annotated[
+            SystemResource, Field(description="Which system resource to read.")
+        ],
+        name: Annotated[
             str | None,
             Field(
                 default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
+                description=(
+                    "Object key to fetch. Omit to list every object. "
+                    "Rejected for singletons and monitor endpoints."
+                ),
             ),
         ] = None,
+        start: StartParam = None,
+        count: CountParam = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
-        """Get the FortiOS system status (firmware version, hostname, serial number,
-        uptime, HA state, etc.)."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.monitor_get("system/status", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
+        """Placeholder replaced below with the generated resource table."""
+        return await read_resource(
+            ctx, "system", resource, name, instance, vdom, start, count
+        )
 
-    @mcp.tool()
-    async def system_resource_usage(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """Get real-time resource usage: CPU, memory, disk, sessions."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.monitor_get("system/resource/usage", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool()
-    async def system_performance_status(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """Get performance statistics (CPU usage per core, memory, network throughput)."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.monitor_get("system/performance/status", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool()
-    async def system_ha_status(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """Get High Availability (HA) cluster status."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.monitor_get("system/ha-statistics", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool()
-    async def system_firmware_list(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """List available firmware versions for upgrade."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.monitor_get("system/firmware", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool()
-    async def system_time_get(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """Get the current system time and timezone."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.cmdb_get("system/time", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
+    system_read.__doc__ = (
+        "Read system configuration and device health.\n\n"
+        "Omit `name` to list a resource, or pass it to fetch one object by "
+        "key.\n\n"
+        "Network interfaces are not in this table -- their `_list`/`_get` "
+        "tools carry real filter logic and were kept separately. Use "
+        "`system_interface_list`/`system_interface_get` for network "
+        "interfaces.\n\n" + resource_table_doc("system")
+    )
+    mcp.tool(annotations=READ_ONLY)(system_read)
 
     # ------------------------------------------------------------------
     # Global Configuration
     # ------------------------------------------------------------------
 
-    @mcp.tool()
-    async def system_global_get(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """Get FortiOS global settings (hostname, admin timeout, language, etc.)."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.cmdb_get("system/global", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool()
+    @mcp.tool(annotations=DESTRUCTIVE)
     async def system_global_update(
         ctx: Context,
         hostname: Annotated[
@@ -174,16 +85,13 @@ def register(mcp: FastMCP) -> None:
                 description="GUI language: english, simch, japanese, korean, spanish, trach, french, portuguese.",
             ),
         ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Update FortiOS global settings (partial update — only specified fields change)."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         body: dict[str, Any] = {}
         if hostname is not None:
             body["hostname"] = hostname
@@ -204,52 +112,54 @@ def register(mcp: FastMCP) -> None:
     # Network Interfaces
     # ------------------------------------------------------------------
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def system_interface_list(
         ctx: Context,
         include_vlan: Annotated[
             bool, Field(default=True, description="Include VLAN sub-interfaces.")
         ] = True,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        start: StartParam = None,
+        count: CountParam = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """List all network interfaces (physical, VLAN, loopback, aggregate, tunnel)."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         params: dict[str, Any] = {}
         if not include_vlan:
             params["filter"] = "type!=vlan"
         try:
-            return await client.cmdb_get("system/interface", params or None, vdom=vdom)
+            page_start, page_count = normalise(start, count)
+        except PageError as exc:
+            return {"error": str(exc)}
+        params.update(page_query(page_start, page_count))
+        try:
+            payload = await client.cmdb_get("system/interface", params, vdom=vdom)
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
+        return paginate(payload, page_start, page_count)
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def system_interface_get(
         ctx: Context,
         name: Annotated[
             str, Field(description="Interface name (e.g. 'port1', 'wan1', 'internal').")
         ],
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Get the configuration of a specific interface."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             return await client.cmdb_get(f"system/interface/{name}", vdom=vdom)
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=CREATES)
     async def system_interface_create(
         ctx: Context,
         name: Annotated[str, Field(description="Interface name.")],
@@ -293,16 +203,13 @@ def register(mcp: FastMCP) -> None:
                 description="Allowed management access (space-separated): ping https ssh snmp http telnet.",
             ),
         ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Create a new network interface."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         body: dict[str, Any] = {"name": name, "type": interface_type, "status": status}
         if ip:
             body["ip"] = ip
@@ -321,7 +228,7 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=DESTRUCTIVE)
     async def system_interface_update(
         ctx: Context,
         name: Annotated[str, Field(description="Interface name to update.")],
@@ -345,16 +252,13 @@ def register(mcp: FastMCP) -> None:
         mtu: Annotated[
             int | None, Field(default=None, description="MTU value (68-9000).")
         ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Update an existing network interface (only specified fields are changed)."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         body: dict[str, Any] = {}
         if ip is not None:
             body["ip"] = ip
@@ -375,48 +279,11 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
-    async def system_interface_delete(
-        ctx: Context,
-        name: Annotated[str, Field(description="Interface name to delete.")],
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """Delete a network interface."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.cmdb_delete(f"system/interface/{name}", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
     # ------------------------------------------------------------------
     # DNS
     # ------------------------------------------------------------------
 
-    @mcp.tool()
-    async def system_dns_get(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """Get DNS server configuration (primary, secondary, search domains)."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.cmdb_get("system/dns", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool()
+    @mcp.tool(annotations=DESTRUCTIVE)
     async def system_dns_update(
         ctx: Context,
         primary: Annotated[
@@ -428,16 +295,13 @@ def register(mcp: FastMCP) -> None:
         domain: Annotated[
             str | None, Field(default=None, description="Local domain name.")
         ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Update DNS configuration."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         body: dict[str, Any] = {}
         if primary:
             body["primary"] = primary
@@ -456,25 +320,7 @@ def register(mcp: FastMCP) -> None:
     # NTP
     # ------------------------------------------------------------------
 
-    @mcp.tool()
-    async def system_ntp_get(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """Get NTP synchronization configuration."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.cmdb_get("system/ntp", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool()
+    @mcp.tool(annotations=DESTRUCTIVE)
     async def system_ntp_update(
         ctx: Context,
         ntpsync: Annotated[
@@ -494,16 +340,13 @@ def register(mcp: FastMCP) -> None:
                 description="Synchronization interval in minutes (1-1440).",
             ),
         ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Update NTP configuration."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         body: dict[str, Any] = {"ntpsync": ntpsync}
         if server:
             body["ntpserver"] = [
@@ -520,44 +363,7 @@ def register(mcp: FastMCP) -> None:
     # Admin accounts
     # ------------------------------------------------------------------
 
-    @mcp.tool()
-    async def system_admin_list(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """List all administrator accounts."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.cmdb_get("system/admin", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool()
-    async def system_admin_get(
-        ctx: Context,
-        name: Annotated[str, Field(description="Administrator account name.")],
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """Get a specific administrator account configuration."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.cmdb_get(f"system/admin/{name}", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool()
+    @mcp.tool(annotations=CREATES)
     async def system_admin_create(
         ctx: Context,
         name: Annotated[str, Field(description="New administrator username.")],
@@ -581,16 +387,13 @@ def register(mcp: FastMCP) -> None:
                 description="Trusted host 1 (CIDR notation e.g. '192.168.1.0/24').",
             ),
         ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Create a new administrator account."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         body: dict[str, Any] = {
             "name": name,
             "password": password,
@@ -605,69 +408,11 @@ def register(mcp: FastMCP) -> None:
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
-    async def system_admin_delete(
-        ctx: Context,
-        name: Annotated[
-            str, Field(description="Administrator account name to delete.")
-        ],
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """Delete an administrator account."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.cmdb_delete(f"system/admin/{name}", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
     # ------------------------------------------------------------------
     # DHCP Server
     # ------------------------------------------------------------------
 
-    @mcp.tool()
-    async def system_dhcp_server_list(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """List all DHCP server instances."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.cmdb_get("system.dhcp/server", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool()
-    async def system_dhcp_server_get(
-        ctx: Context,
-        server_id: Annotated[int, Field(description="DHCP server ID.")],
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """Get a specific DHCP server configuration."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.cmdb_get(f"system.dhcp/server/{server_id}", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool()
+    @mcp.tool(annotations=CREATES)
     async def system_dhcp_server_create(
         ctx: Context,
         interface: Annotated[
@@ -689,16 +434,13 @@ def register(mcp: FastMCP) -> None:
         domain: Annotated[
             str | None, Field(default=None, description="DNS domain.")
         ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Create a new DHCP server."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         body: dict[str, Any] = {
             "status": "enable",
             "interface": interface,
@@ -713,187 +455,5 @@ def register(mcp: FastMCP) -> None:
             body["domain"] = domain
         try:
             return await client.cmdb_post("system.dhcp/server", body, vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    # ------------------------------------------------------------------
-    # SNMP
-    # ------------------------------------------------------------------
-
-    @mcp.tool()
-    async def system_snmp_sysinfo_get(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """Get SNMP system info (contact, location, description, trap thresholds)."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.cmdb_get("system.snmp/sysinfo", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool()
-    async def system_snmp_community_list(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """List SNMP v1/v2c communities."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.cmdb_get("system.snmp/community", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool()
-    async def system_snmp_user_list(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """List SNMPv3 users."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.cmdb_get("system.snmp/user", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    # ------------------------------------------------------------------
-    # FortiGuard / Auto-Update
-    # ------------------------------------------------------------------
-
-    @mcp.tool()
-    async def system_fortiguard_status(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """Get FortiGuard service registration and update status."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.monitor_get("license/status", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool()
-    async def system_autoupdate_schedule_get(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """Get the FortiGuard auto-update schedule."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.cmdb_get("system.autoupdate/schedule", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    # ------------------------------------------------------------------
-    # Certificates
-    # ------------------------------------------------------------------
-
-    @mcp.tool()
-    async def certificate_local_list(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """List local (device) certificates."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.cmdb_get("certificate/local", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    @mcp.tool()
-    async def certificate_ca_list(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """List trusted CA certificates."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.cmdb_get("certificate/ca", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    # ------------------------------------------------------------------
-    # VDOM list
-    # ------------------------------------------------------------------
-
-    @mcp.tool()
-    async def system_vdom_list(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """List all configured VDOMs."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.cmdb_get("system/vdom", vdom=vdom)
-        except FortiOSError as exc:
-            return {"error": str(exc), "status_code": exc.status_code}
-
-    # ------------------------------------------------------------------
-    # Syslog
-    # ------------------------------------------------------------------
-
-    @mcp.tool()
-    async def log_syslogd_get(
-        ctx: Context,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
-    ) -> dict[str, Any]:
-        """Get the primary Syslog server configuration."""
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        try:
-            return await client.cmdb_get("log.syslogd/setting", vdom=vdom)
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}

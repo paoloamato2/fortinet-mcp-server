@@ -13,7 +13,12 @@ from typing import Annotated, Any
 from mcp.server.fastmcp import FastMCP, Context
 from pydantic import Field
 
-from fortios_client import FortiOSClient, FortiOSError
+from fortios_client import FortiOSError
+from instances import FortiOSAPI
+from paging import PageError, normalise, page_query, paginate
+from resources import DELETE_RESOURCES, DeletableResource
+from tool_annotations import CREATES, DESTRUCTIVE, READ_ONLY, UNCONSTRAINED
+from tool_params import CountParam, InstanceParam, StartParam, VdomParam
 
 
 def register(mcp: FastMCP) -> None:  # noqa: C901
@@ -23,7 +28,7 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
     # CMDB generic tools  (/api/v2/cmdb/…)
     # ------------------------------------------------------------------
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def cmdb_list(
         ctx: Context,
         resource_path: Annotated[
@@ -48,14 +53,6 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
                 ),
             ),
         ] = None,
-        start: Annotated[
-            int | None,
-            Field(default=None, description="Pagination offset (0-based)."),
-        ] = None,
-        count: Annotated[
-            int | None,
-            Field(default=None, description="Maximum number of results to return."),
-        ] = None,
         format_fields: Annotated[
             str | None,
             Field(
@@ -63,36 +60,40 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
                 description="Comma-separated list of fields to return. Reduces response size.",
             ),
         ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        start: StartParam = None,
+        count: CountParam = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """List all objects of a CMDB resource type.
 
-        Covers any GET on /api/v2/cmdb/{resource_path}.
-        Returns the full FortiOS JSON response including results array and metadata.
+        Covers any GET on /api/v2/cmdb/{resource_path}. Returns one bounded
+        page of the FortiOS JSON response; see `_page` for how to fetch the
+        rest.
         """
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         params: dict[str, Any] = {}
         if filters:
             params["filter"] = filters
-        if start is not None:
-            params["start"] = start
-        if count is not None:
-            params["count"] = count
         if format_fields:
-            params["format"] = format_fields
+            # FortiOS expects pipe-separated fields; commas yield empty objects.
+            fields = [f.strip() for f in format_fields.replace("|", ",").split(",")]
+            params["format"] = "|".join(f for f in fields if f)
         try:
-            return await client.cmdb_get(resource_path, params or None, vdom=vdom)
+            page_start, page_count = normalise(start, count)
+        except PageError as exc:
+            return {"error": str(exc)}
+        params.update(page_query(page_start, page_count))
+        try:
+            payload = await client.cmdb_get(resource_path, params, vdom=vdom)
         except FortiOSError as exc:
             await ctx.error(f"cmdb_list error: {exc}")
             return {"error": str(exc), "status_code": exc.status_code}
+        return paginate(payload, page_start, page_count)
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def cmdb_get(
         ctx: Context,
         resource_path: Annotated[
@@ -105,26 +106,23 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
                 )
             ),
         ],
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Get a single CMDB configuration object by its primary key.
 
         Covers any GET on /api/v2/cmdb/{resource}/{key}.
         """
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             return await client.cmdb_get(resource_path, vdom=vdom)
         except FortiOSError as exc:
             await ctx.error(f"cmdb_get error: {exc}")
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=CREATES)
     async def cmdb_create(
         ctx: Context,
         resource_path: Annotated[
@@ -146,19 +144,16 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
                 )
             ),
         ],
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Create a new CMDB configuration object (POST).
 
         Covers any POST on /api/v2/cmdb/{resource_path}.
         """
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             body = json.loads(data)
         except json.JSONDecodeError as exc:
@@ -169,7 +164,7 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
             await ctx.error(f"cmdb_create error: {exc}")
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=DESTRUCTIVE)
     async def cmdb_update(
         ctx: Context,
         resource_path: Annotated[
@@ -190,19 +185,16 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
                 )
             ),
         ],
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Update/replace a CMDB configuration object (PUT).
 
         Covers any PUT on /api/v2/cmdb/{resource_path}/{key}.
         """
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             body = json.loads(data)
         except json.JSONDecodeError as exc:
@@ -213,7 +205,7 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
             await ctx.error(f"cmdb_update error: {exc}")
             return {"error": str(exc), "status_code": exc.status_code}
 
-    @mcp.tool()
+    @mcp.tool(annotations=DESTRUCTIVE)
     async def cmdb_delete(
         ctx: Context,
         resource_path: Annotated[
@@ -225,30 +217,62 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
                 )
             ),
         ],
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Delete a CMDB configuration object.
 
         Covers any DELETE on /api/v2/cmdb/{resource_path}/{key}.
         """
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         try:
             return await client.cmdb_delete(resource_path, vdom=vdom)
         except FortiOSError as exc:
             await ctx.error(f"cmdb_delete error: {exc}")
             return {"error": str(exc), "status_code": exc.status_code}
 
+    async def fortios_delete(
+        ctx: Context,
+        resource: Annotated[
+            DeletableResource,
+            Field(description="Which kind of object to delete."),
+        ],
+        name: Annotated[str, Field(description="Key of the object to delete.")],
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
+    ) -> dict[str, Any]:
+        """Placeholder replaced below with the generated resource table."""
+        row = DELETE_RESOURCES.get(resource)
+        if row is None:
+            known = ", ".join(sorted(DELETE_RESOURCES))
+            return {"error": f"unknown resource {resource!r}. Known: {known}"}
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
+        try:
+            return await client.cmdb_delete(f"{row.path}/{name}", vdom=vdom)
+        except FortiOSError as exc:
+            return {"error": str(exc), "status_code": exc.status_code}
+
+    fortios_delete.__doc__ = (
+        "Delete a configuration object from a FortiGate.\n\n"
+        "`resource` is restricted to the object types this server supports "
+        "deleting, so this tool cannot be aimed at an arbitrary API path. "
+        "Deletions are not reversible — confirm with the user first.\n\n"
+        + "\n".join(
+            f"- `{value}` — {DELETE_RESOURCES[value].summary}"
+            for value in sorted(DELETE_RESOURCES)
+        )
+    )
+    mcp.tool(annotations=DESTRUCTIVE)(fortios_delete)
+
     # ------------------------------------------------------------------
     # Monitor generic tools  (/api/v2/monitor/…)
     # ------------------------------------------------------------------
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def monitor_get(
         ctx: Context,
         monitor_path: Annotated[
@@ -271,32 +295,43 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
                 ),
             ),
         ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        start: StartParam = None,
+        count: CountParam = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Retrieve real-time operational data from any monitor endpoint.
 
-        Covers any GET on /api/v2/monitor/{monitor_path}.
+        Covers any GET on /api/v2/monitor/{monitor_path}. Returns one bounded
+        page; see `_page` for how to fetch the rest. An explicit `start`/
+        `count` wins over a same-named key inside `extra_params`.
         """
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        params: dict[str, Any] | None = None
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
+        parsed_extra: dict[str, Any] = {}
         if extra_params:
             try:
-                params = json.loads(extra_params)
+                parsed_extra = json.loads(extra_params)
             except json.JSONDecodeError as exc:
                 return {"error": f"Invalid JSON in extra_params: {exc}"}
+            if not isinstance(parsed_extra, dict):
+                return {"error": "extra_params must be a JSON object"}
+        effective_start = start if start is not None else parsed_extra.get("start")
+        effective_count = count if count is not None else parsed_extra.get("count")
         try:
-            return await client.monitor_get(monitor_path, params, vdom=vdom)
+            page_start, page_count = normalise(effective_start, effective_count)
+        except PageError as exc:
+            return {"error": str(exc)}
+        params = {**parsed_extra, **page_query(page_start, page_count)}
+        try:
+            payload = await client.monitor_get(monitor_path, params, vdom=vdom)
         except FortiOSError as exc:
             await ctx.error(f"monitor_get error: {exc}")
             return {"error": str(exc), "status_code": exc.status_code}
+        return paginate(payload, page_start, page_count)
 
-    @mcp.tool()
+    @mcp.tool(annotations=UNCONSTRAINED)
     async def monitor_action(
         ctx: Context,
         monitor_path: Annotated[
@@ -320,19 +355,16 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
                 ),
             ),
         ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Trigger a monitor action (POST) on any monitor endpoint.
 
         Covers any POST on /api/v2/monitor/{monitor_path}.
         """
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         body_dict: dict[str, Any] = {}
         if body:
             try:
@@ -349,7 +381,7 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
     # Log generic tool  (/api/v2/log/…)
     # ------------------------------------------------------------------
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def log_get(
         ctx: Context,
         log_path: Annotated[
@@ -372,19 +404,16 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
                 ),
             ),
         ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Retrieve log entries from disk, memory, FortiAnalyzer, or FortiCloud.
 
         Covers any GET on /api/v2/log/{log_path}.
         """
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         params: dict[str, Any] | None = None
         if extra_params:
             try:
@@ -401,7 +430,7 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
     # Service generic tool  (/api/v2/service/…)
     # ------------------------------------------------------------------
 
-    @mcp.tool()
+    @mcp.tool(annotations=UNCONSTRAINED)
     async def service_call(
         ctx: Context,
         service_path: Annotated[
@@ -429,19 +458,16 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
                 description="Optional JSON body for POST requests.",
             ),
         ] = None,
-        vdom: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Target VDOM name. Defaults to the server default VDOM. Use '*' for all VDOMs (super-admin required).",
-            ),
-        ] = None,
+        instance: InstanceParam = None,
+        vdom: VdomParam = None,
     ) -> dict[str, Any]:
         """Call any FortiOS Service API endpoint.
 
         Covers all GET/POST on /api/v2/service/{service_path}.
         """
-        client: FortiOSClient = ctx.request_context.lifespan_context["client"]
+        client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
+            instance
+        )
         if method.upper() == "POST":
             body_dict: dict[str, Any] = {}
             if body:
