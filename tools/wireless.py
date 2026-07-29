@@ -14,6 +14,7 @@ from pydantic import Field
 
 from fortios_client import FortiOSError
 from instances import FortiOSAPI
+from paging import PageError, normalise, page_query, paginate
 from resources import WirelessResource
 from tool_annotations import CREATES, READ_ONLY
 from tool_params import CountParam, InstanceParam, StartParam, VdomParam
@@ -141,6 +142,8 @@ def register(mcp: FastMCP) -> None:
             str | None,
             Field(default=None, description="Filter by SSID name."),
         ] = None,
+        start: StartParam = None,
+        count: CountParam = None,
         instance: InstanceParam = None,
         vdom: VdomParam = None,
     ) -> dict[str, Any]:
@@ -154,9 +157,15 @@ def register(mcp: FastMCP) -> None:
         if ssid:
             params["ssid"] = ssid
         try:
-            return await client.monitor_get("wifi/client", params or None, vdom=vdom)
+            page_start, page_count = normalise(start, count)
+        except PageError as exc:
+            return {"error": str(exc)}
+        params.update(page_query(page_start, page_count))
+        try:
+            payload = await client.monitor_get("wifi/client", params, vdom=vdom)
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
+        return paginate(payload, page_start, page_count)
 
     @mcp.tool(annotations=READ_ONLY)
     async def monitor_wifi_ap_status(

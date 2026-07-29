@@ -66,12 +66,8 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool(annotations=READ_ONLY)
     async def firewall_policy_list(
         ctx: Context,
-        start: Annotated[
-            int, Field(default=0, description="Offset for pagination.")
-        ] = 0,
-        count: Annotated[
-            int, Field(default=200, description="Max number of policies to return.")
-        ] = 200,
+        start: StartParam = None,
+        count: CountParam = None,
         filter_srcintf: Annotated[
             str | None,
             Field(default=None, description="Filter by source interface name."),
@@ -95,7 +91,7 @@ def register(mcp: FastMCP) -> None:
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
             instance
         )
-        params: dict[str, Any] = {"start": start, "count": count}
+        params: dict[str, Any] = {}
         filters = []
         if filter_srcintf:
             filters.append(f"srcintf=={filter_srcintf}")
@@ -106,9 +102,15 @@ def register(mcp: FastMCP) -> None:
         if filters:
             params["filter"] = "&".join(filters)
         try:
-            return await client.cmdb_get("firewall/policy", params, vdom=vdom)
+            page_start, page_count = normalise(start, count)
+        except PageError as exc:
+            return {"error": str(exc)}
+        params.update(page_query(page_start, page_count))
+        try:
+            payload = await client.cmdb_get("firewall/policy", params, vdom=vdom)
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
+        return paginate(payload, page_start, page_count)
 
     @mcp.tool(annotations=READ_ONLY)
     async def firewall_policy_get(
@@ -620,9 +622,8 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool(annotations=READ_ONLY)
     async def monitor_firewall_session_list(
         ctx: Context,
-        count: Annotated[
-            int, Field(default=100, description="Max number of sessions to return.")
-        ] = 100,
+        start: StartParam = None,
+        count: CountParam = None,
         srcaddr: Annotated[
             str | None, Field(default=None, description="Filter by source IP address.")
         ] = None,
@@ -650,7 +651,7 @@ def register(mcp: FastMCP) -> None:
         client: FortiOSAPI = ctx.request_context.lifespan_context["registry"].resolve(
             instance
         )
-        params: dict[str, Any] = {"count": count}
+        params: dict[str, Any] = {}
         if srcaddr:
             params["srcaddr"] = srcaddr
         if dstaddr:
@@ -662,9 +663,15 @@ def register(mcp: FastMCP) -> None:
         if protocol is not None:
             params["proto"] = protocol
         try:
-            return await client.monitor_get("firewall/session", params, vdom=vdom)
+            page_start, page_count = normalise(start, count)
+        except PageError as exc:
+            return {"error": str(exc)}
+        params.update(page_query(page_start, page_count))
+        try:
+            payload = await client.monitor_get("firewall/session", params, vdom=vdom)
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
+        return paginate(payload, page_start, page_count)
 
     @mcp.tool(annotations=DESTRUCTIVE)
     async def monitor_firewall_session_close(

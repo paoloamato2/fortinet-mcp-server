@@ -160,7 +160,10 @@ async def test_typed_firewall_tool_also_honours_instance(
     fleet: None, httpx_mock: HTTPXMock
 ) -> None:
     httpx_mock.add_response(
-        url="https://dc.example/api/v2/cmdb/firewall/policy?vdom=root&start=0&count=200",
+        url=(
+            "https://dc.example/api/v2/cmdb/firewall/policy"
+            f"?vdom=root&start=0&count={PAGE_ROWS + 1}"
+        ),
         json={"results": [{"policyid": 9}], "http_status": 200},
     )
 

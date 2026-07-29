@@ -50,10 +50,9 @@
 
 - **80 typed MCP tools** organized by functional area (system, firewall, VPN, router, user, monitor, log, security, wireless), plus a fleet-management tool (`fortigate_list`) — nine of the 80 are per-domain `<domain>_read` tools that cover 121 read-only resources through a `resource` enum
 - **Reads are paged by default.** Every list read — the nine `<domain>_read`
-  tools, the typed `firewall_address_list`/`system_interface_list`, and the
-  generic `cmdb_list`/`monitor_get` pass-throughs — returns at most 50 rows
-  and at most ~25,000 characters, whichever binds first, and reports what it
-  did:
+  tools, every typed `*_list` tool, and the generic `cmdb_list`/`monitor_get`
+  pass-throughs — returns at most 50 rows and at most ~25,000 characters,
+  whichever binds first, and reports what it did:
 
   ```json
   "_page": {"start": 0, "returned": 3, "more": true, "next_start": 3, "total": 77}

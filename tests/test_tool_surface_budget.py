@@ -21,6 +21,14 @@ to twelve read tools at a measured cost of 2,820 characters. That buys a bound
 on responses that reached 1,274,739 characters -- 12x this entire surface --
 so the trade was reviewed and accepted rather than worked around. See
 docs/superpowers/specs/2026-07-28-read-paging-design.md.
+
+Raised again, 106,000 -> 107,000, on 2026-07-28: the same paging reached the
+four ``*_list`` tools the first pass missed, at a measured cost of 386
+characters. ``monitor_wifi_client_list`` bounded its response by nothing at
+all, and ``firewall_policy_list`` forwarded ``start``/``count`` to the device
+unchecked, so a negative offset never raised ``PageError``. Cheaper than the
+first raise because three of the four traded verbose bespoke ``count``
+descriptions for the shared terse aliases.
 """
 
 from __future__ import annotations
@@ -31,7 +39,7 @@ from server import mcp
 
 #: Measured ceiling. Lower this whenever a change shrinks the surface; never
 #: raise it without recording why in the commit message.
-SURFACE_CEILING_CHARS = 106_000
+SURFACE_CEILING_CHARS = 107_000
 
 
 async def _tool_payloads() -> list[dict[str, object]]:

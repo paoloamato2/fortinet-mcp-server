@@ -13,6 +13,7 @@ from pydantic import Field
 
 from fortios_client import FortiOSError
 from instances import FortiOSAPI
+from paging import PageError, normalise, page_query, paginate
 from resources import MonitorResource
 from tool_annotations import READ_ONLY
 from tool_params import CountParam, InstanceParam, StartParam, VdomParam
@@ -166,9 +167,8 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool(annotations=READ_ONLY)
     async def monitor_endpoint_record_list(
         ctx: Context,
-        count: Annotated[
-            int, Field(default=100, description="Number of records to return.")
-        ] = 100,
+        start: StartParam = None,
+        count: CountParam = None,
         instance: InstanceParam = None,
         vdom: VdomParam = None,
     ) -> dict[str, Any]:
@@ -177,11 +177,18 @@ def register(mcp: FastMCP) -> None:
             instance
         )
         try:
-            return await client.monitor_get(
-                "endpoint-control/record-list", {"count": count}, vdom=vdom
+            page_start, page_count = normalise(start, count)
+        except PageError as exc:
+            return {"error": str(exc)}
+        try:
+            payload = await client.monitor_get(
+                "endpoint-control/record-list",
+                page_query(page_start, page_count),
+                vdom=vdom,
             )
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
+        return paginate(payload, page_start, page_count)
 
     # ==================================================================
     # SWITCH CONTROLLER
