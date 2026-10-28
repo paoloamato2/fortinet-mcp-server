@@ -15,6 +15,27 @@ from pydantic import Field
 
 from fortios_client import FortiOSClient, FortiOSError
 
+JsonObject = dict[str, Any] | str
+
+
+def _as_dict(value: JsonObject | None, name: str) -> dict[str, Any] | None:
+    """Accept a JSON object or a JSON string.
+
+    MCP clients differ: some pass JSON-looking strings through verbatim, others
+    parse them into objects first. Both must work.
+    """
+    if value is None or value == "":
+        return None
+    if isinstance(value, dict):
+        return value
+    try:
+        parsed = json.loads(value)
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"Invalid JSON in {name}: {exc}") from exc
+    if not isinstance(parsed, dict):
+        raise ValueError(f"{name} must be a JSON object")
+    return parsed
+
 
 def register(mcp: FastMCP) -> None:  # noqa: C901
     """Register all generic tools onto the FastMCP instance."""
@@ -137,10 +158,10 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
             ),
         ],
         data: Annotated[
-            str,
+            JsonObject,
             Field(
                 description=(
-                    "JSON string with the object properties to create. "
+                    "JSON object (or JSON string) with the object properties to create. "
                     "Must comply with the FortiOS schema for this resource. "
                     'Example: \'{"name": "my-addr", "type": "ipmask", "subnet": "10.0.0.0/24"}\''
                 )
@@ -160,9 +181,9 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
         """
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
         try:
-            body = json.loads(data)
-        except json.JSONDecodeError as exc:
-            return {"error": f"Invalid JSON in data: {exc}"}
+            body = _as_dict(data, "data") or {}
+        except ValueError as exc:
+            return {"error": str(exc)}
         try:
             return await client.cmdb_post(resource_path, body, vdom=vdom)
         except FortiOSError as exc:
@@ -182,10 +203,10 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
             ),
         ],
         data: Annotated[
-            str,
+            JsonObject,
             Field(
                 description=(
-                    "JSON string with properties to update (full object replacement via PUT). "
+                    "JSON object (or JSON string) with properties to update (full object replacement via PUT). "
                     "Must include all required fields for the object."
                 )
             ),
@@ -204,9 +225,9 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
         """
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
         try:
-            body = json.loads(data)
-        except json.JSONDecodeError as exc:
-            return {"error": f"Invalid JSON in data: {exc}"}
+            body = _as_dict(data, "data") or {}
+        except ValueError as exc:
+            return {"error": str(exc)}
         try:
             return await client.cmdb_put(resource_path, body, vdom=vdom)
         except FortiOSError as exc:
@@ -262,11 +283,11 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
             ),
         ],
         extra_params: Annotated[
-            str | None,
+            JsonObject | None,
             Field(
                 default=None,
                 description=(
-                    "Optional JSON string with additional query parameters. "
+                    "Optional JSON object (or JSON string) with additional query parameters. "
                     'Example: \'{"tunnel_name": "my-vpn"}\''
                 ),
             ),
@@ -284,12 +305,10 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
         Covers any GET on /api/v2/monitor/{monitor_path}.
         """
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        params: dict[str, Any] | None = None
-        if extra_params:
-            try:
-                params = json.loads(extra_params)
-            except json.JSONDecodeError as exc:
-                return {"error": f"Invalid JSON in extra_params: {exc}"}
+        try:
+            params = _as_dict(extra_params, "extra_params")
+        except ValueError as exc:
+            return {"error": str(exc)}
         try:
             return await client.monitor_get(monitor_path, params, vdom=vdom)
         except FortiOSError as exc:
@@ -311,11 +330,11 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
             ),
         ],
         body: Annotated[
-            str | None,
+            JsonObject | None,
             Field(
                 default=None,
                 description=(
-                    "Optional JSON string with action parameters. "
+                    "Optional JSON object (or JSON string) with action parameters. "
                     'Example: \'{"mkey": "tunnel-name"}\''
                 ),
             ),
@@ -333,12 +352,10 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
         Covers any POST on /api/v2/monitor/{monitor_path}.
         """
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        body_dict: dict[str, Any] = {}
-        if body:
-            try:
-                body_dict = json.loads(body)
-            except json.JSONDecodeError as exc:
-                return {"error": f"Invalid JSON in body: {exc}"}
+        try:
+            body_dict = _as_dict(body, "body") or {}
+        except ValueError as exc:
+            return {"error": str(exc)}
         try:
             return await client.monitor_post(monitor_path, body_dict, vdom=vdom)
         except FortiOSError as exc:
@@ -363,11 +380,11 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
             ),
         ],
         extra_params: Annotated[
-            str | None,
+            JsonObject | None,
             Field(
                 default=None,
                 description=(
-                    "Optional JSON string with query params like filters, rows, start. "
+                    "Optional JSON object (or JSON string) with query params like filters, rows, start. "
                     'Example: \'{"rows": 100, "start": 0, "filter": "srcip==10.0.0.1"}\''
                 ),
             ),
@@ -385,12 +402,10 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
         Covers any GET on /api/v2/log/{log_path}.
         """
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        params: dict[str, Any] | None = None
-        if extra_params:
-            try:
-                params = json.loads(extra_params)
-            except json.JSONDecodeError as exc:
-                return {"error": f"Invalid JSON in extra_params: {exc}"}
+        try:
+            params = _as_dict(extra_params, "extra_params")
+        except ValueError as exc:
+            return {"error": str(exc)}
         try:
             return await client.log_get(log_path, params, vdom=vdom)
         except FortiOSError as exc:
@@ -423,10 +438,10 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
             ),
         ] = "GET",
         body: Annotated[
-            str | None,
+            JsonObject | None,
             Field(
                 default=None,
-                description="Optional JSON body for POST requests.",
+                description="Optional JSON object (or JSON string) body for POST requests.",
             ),
         ] = None,
         vdom: Annotated[
@@ -443,12 +458,10 @@ def register(mcp: FastMCP) -> None:  # noqa: C901
         """
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
         if method.upper() == "POST":
-            body_dict: dict[str, Any] = {}
-            if body:
-                try:
-                    body_dict = json.loads(body)
-                except json.JSONDecodeError as exc:
-                    return {"error": f"Invalid JSON in body: {exc}"}
+            try:
+                body_dict = _as_dict(body, "body") or {}
+            except ValueError as exc:
+                return {"error": str(exc)}
             try:
                 return await client.service_post(service_path, body_dict, vdom=vdom)
             except FortiOSError as exc:
