@@ -12,6 +12,9 @@ from pydantic import Field
 
 from fortios_client import FortiOSClient, FortiOSError
 
+# IP protocol number -> name as FortiOS reports it in session "proto".
+_PROTO_NAMES = {1: "icmp", 6: "tcp", 17: "udp", 47: "gre", 50: "esp", 58: "icmp6"}
+
 
 def register(mcp: FastMCP) -> None:
     """Register all firewall tools."""
@@ -982,8 +985,22 @@ def register(mcp: FastMCP) -> None:
     async def monitor_firewall_session_list(
         ctx: Context,
         count: Annotated[
-            int, Field(default=100, description="Max number of sessions to return.")
+            int,
+            Field(
+                default=100,
+                description="Sessions per page. FortiOS returns at least 20 and at most 1000; page with start.",
+            ),
         ] = 100,
+        start: Annotated[
+            int, Field(default=0, description="Row offset for paging (0-based).")
+        ] = 0,
+        summary: Annotated[
+            bool,
+            Field(
+                default=False,
+                description="Also return the summary block (matched_count, session_count, setup_rate).",
+            ),
+        ] = False,
         srcaddr: Annotated[
             str | None, Field(default=None, description="Filter by source IP address.")
         ] = None,
@@ -1012,9 +1029,16 @@ def register(mcp: FastMCP) -> None:
             ),
         ] = None,
     ) -> dict[str, Any]:
-        """List active firewall sessions with optional filters."""
+        """List active firewall sessions with optional filters.
+
+        FortiOS ignores server-side filters on this endpoint (verified on
+        7.4.13, see Fortinet community KB 224183), so the address/port/protocol
+        filters are also applied client-side to the returned page.
+        """
         client: FortiOSClient = ctx.request_context.lifespan_context["client"]
-        params: dict[str, Any] = {"count": count}
+        params: dict[str, Any] = {"count": count, "start": start}
+        if summary:
+            params["summary"] = "true"
         if srcaddr:
             params["srcaddr"] = srcaddr
         if dstaddr:
@@ -1026,9 +1050,22 @@ def register(mcp: FastMCP) -> None:
         if protocol is not None:
             params["proto"] = protocol
         try:
-            return await client.monitor_get("firewall/session", params, vdom=vdom)
+            result = await client.monitor_get("firewall/session", params, vdom=vdom)
         except FortiOSError as exc:
             return {"error": str(exc), "status_code": exc.status_code}
+        details = result.get("results", {}).get("details")
+        if isinstance(details, list):
+            proto_name = _PROTO_NAMES.get(protocol) if protocol is not None else None
+            result["results"]["details"] = [
+                s
+                for s in details
+                if (srcaddr is None or s.get("saddr") == srcaddr)
+                and (dstaddr is None or s.get("daddr") == dstaddr)
+                and (srcport is None or s.get("sport") == srcport)
+                and (dstport is None or s.get("dport") == dstport)
+                and (proto_name is None or s.get("proto") == proto_name)
+            ]
+        return result
 
     @mcp.tool()
     async def monitor_firewall_session_close(
